@@ -1,4 +1,4 @@
-package com.example.marketplacebackend;
+package com.market.marketplacebackend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
