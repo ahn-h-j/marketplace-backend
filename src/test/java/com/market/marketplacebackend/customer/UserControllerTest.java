@@ -17,7 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -65,6 +65,8 @@ class UserControllerTest {
                         .andExpect(jsonPath("$.success").value(true))
                         .andExpect(jsonPath("$.message").value("회원 가입 성공"))
                         .andExpect(jsonPath("$.code").value(200));
+
+        verify(userService, times(1)).join(any(SignUpDto.class));
     }
 
     @Test
@@ -72,10 +74,10 @@ class UserControllerTest {
     void signUp_Validation_Fail() throws Exception {
         // given - 이름이 빈 값
         SignUpDto invalidDto = SignUpDto.builder()
-                .name("")  // 빈 값
-                .email("test@example.com")
-                .password("password123")
-                .phoneNumber("010-1234-5678")
+                .name("")
+                .email("invalid-email")
+                .password("123")
+                .phoneNumber("invalid")
                 .build();
 
         // when & then
@@ -83,5 +85,6 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDto)))
                 .andExpect(status().isBadRequest());
+
     }
 }
