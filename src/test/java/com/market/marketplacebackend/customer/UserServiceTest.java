@@ -1,7 +1,7 @@
 package com.market.marketplacebackend.customer;
 
 import com.market.marketplacebackend.common.SuccessDto;
-import com.market.marketplacebackend.customer.controller.UserController;
+// Removed unused import for UserController
 import com.market.marketplacebackend.customer.domain.Customer;
 import com.market.marketplacebackend.customer.dto.SignUpDto;
 import com.market.marketplacebackend.customer.repository.CustomerRepository;
