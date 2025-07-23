@@ -1,9 +1,11 @@
 package com.market.marketplacebackend.customer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.market.marketplacebackend.common.SuccessDto;
 import com.market.marketplacebackend.customer.controller.UserController;
+import com.market.marketplacebackend.customer.domain.Customer;
+import com.market.marketplacebackend.customer.dto.LoginDto;
 import com.market.marketplacebackend.customer.dto.SignUpDto;
+import com.market.marketplacebackend.customer.repository.CustomerRepository;
 import com.market.marketplacebackend.customer.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -29,6 +32,9 @@ class UserControllerTest {
 
     @InjectMocks
     private UserController userController;
+
+    @Mock
+    private CustomerRepository customerRepository;
 
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
@@ -50,12 +56,9 @@ class UserControllerTest {
                 .phoneNumber("010-1234-5678")
                 .build();
 
-        SuccessDto successDto = SuccessDto.builder()
-                .message("회원가입 성공")
-                .data("회원가입이 완료되었습니다")
-                .build();
+        Customer customer = signUpDto.toEntity();
 
-        when(userService.join(any(SignUpDto.class))).thenReturn(successDto);
+        when(userService.join(any(SignUpDto.class))).thenReturn(customer);
 
         // when & then
         mockMvc.perform(post("/user/signup")
@@ -82,6 +85,54 @@ class UserControllerTest {
 
         // when & then
         mockMvc.perform(post("/user/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDto)))
+                .andExpect(status().isBadRequest());
+
+    }
+
+    @Test
+    @DisplayName("로그인 성공(컨트롤러)")
+    void login_Success_Controller() throws Exception{
+        //given
+        LoginDto loginDto = LoginDto.builder()
+                .email("test@example.com")
+                .password("password123")
+                .build();
+        Customer customer = Customer.builder()
+                .id(1L)
+                .name("test")
+                .email("test@example.com")
+                .build();
+
+        when(userService.login(any(LoginDto.class))).thenReturn(customer);
+
+        //when & then
+        MvcResult mvcResult = mockMvc.perform(post("/user/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginDto)))
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("로그인 성공"))
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.name").value("test"))
+                .andExpect(jsonPath("$.data.email").value("test@example.com"))
+                .andReturn();
+        System.out.println("실제 JSON: " + mvcResult.getResponse().getContentAsString());
+
+
+    }
+
+    @Test
+    @DisplayName("로그인 실패 - validation 오류")
+    void login_Validation_Fail() throws Exception {
+        // given - 이름이 빈 값
+        LoginDto invalidDto = LoginDto.builder()
+                .email("invalid-email")
+                .password("123")
+                .build();
+
+        // when & then
+        mockMvc.perform(post("/user/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDto)))
                 .andExpect(status().isBadRequest());

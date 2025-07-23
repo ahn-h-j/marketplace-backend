@@ -1,7 +1,10 @@
 package com.market.marketplacebackend.customer;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.market.marketplacebackend.customer.domain.Customer;
+import com.market.marketplacebackend.customer.dto.ApiResponse;
+import com.market.marketplacebackend.customer.dto.LoginDto;
 import com.market.marketplacebackend.customer.dto.SignUpDto;
 import com.market.marketplacebackend.customer.repository.CustomerRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -12,11 +15,14 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -69,5 +75,41 @@ public class UserIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(signUpDto)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("로그인 통합 성공 테스트")
+    void login_Integration_Success() throws Exception{
+        LoginDto loginDto = LoginDto.builder()
+                .email("test@example.com")
+                .password("password123")
+                .build();
+
+        Customer customer = Customer.builder()
+                .name("test")
+                .email("test@example.com")
+                .password("password123")
+                .phoneNumber("010-1234-5678")
+                .build();
+        customerRepository.save(customer);
+
+        MvcResult result = mockMvc.perform(post("/user/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("로그인 성공"))
+                .andExpect(jsonPath("$.data.name").value("test"))
+                .andExpect(jsonPath("$.data.email").value("test@example.com"))
+                .andReturn();
+
+        String response =  result.getResponse().getContentAsString();
+        TypeReference<ApiResponse<Customer>> typeRef = new TypeReference<ApiResponse<Customer>>() {};
+        ApiResponse<Customer> responseDto = objectMapper.readValue(response, typeRef);
+
+        assertThat(responseDto.isSuccess()).isTrue();
+        assertThat(responseDto.getMessage()).isEqualTo("로그인 성공");
+        assertThat(responseDto.getData().getName()).isEqualTo("test");
+        assertThat(responseDto.getData().getEmail()).isEqualTo("test@example.com");
     }
 }
