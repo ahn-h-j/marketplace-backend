@@ -35,7 +35,10 @@ public class UserService {
 
         httpSession.setAttribute("UserId",customer.getId());
 
-        return customer;
+        return Customer.builder()
+                .name(customer.getName())
+                .email(customer.getEmail())
+                .build();
     }
 
 }
