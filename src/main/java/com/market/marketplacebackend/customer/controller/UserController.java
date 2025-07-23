@@ -1,7 +1,8 @@
 package com.market.marketplacebackend.customer.controller;
 
-import com.market.marketplacebackend.common.SuccessDto;
+import com.market.marketplacebackend.customer.domain.Customer;
 import com.market.marketplacebackend.customer.dto.ApiResponse;
+import com.market.marketplacebackend.customer.dto.LoginDto;
 import com.market.marketplacebackend.customer.dto.SignUpDto;
 import com.market.marketplacebackend.customer.service.UserService;
 import jakarta.validation.Valid;
@@ -19,9 +20,16 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/signup")
-    public ApiResponse<SuccessDto> signUp(@Valid @RequestBody SignUpDto signUpDto){
+    public ApiResponse<Customer> signUp(@Valid @RequestBody SignUpDto signUpDto){
 
-        SuccessDto result = userService.join(signUpDto);
-        return ApiResponse.success(result, "회원 가입 성공");
+        Customer newCustomer = userService.join(signUpDto);
+        return ApiResponse.success(newCustomer, "회원 가입 성공");
+    }
+
+    @PostMapping("/login")
+    public ApiResponse<Customer> login(@Valid @RequestBody LoginDto loginDto){
+
+        Customer loginCustomer = userService.login(loginDto);
+        return ApiResponse.success(loginCustomer, "로그인 성공");
     }
 }
