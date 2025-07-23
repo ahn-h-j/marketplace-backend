@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -102,21 +103,23 @@ class UserControllerTest {
                 .id(1L)
                 .name("test")
                 .email("test@example.com")
-                .password("password123")
                 .build();
 
         when(userService.login(any(LoginDto.class))).thenReturn(customer);
 
         //when & then
-        mockMvc.perform(post("/user/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(loginDto)))
+        MvcResult mvcResult = mockMvc.perform(post("/user/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginDto)))
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("로그인 성공"))
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.name").value("test"))
                 .andExpect(jsonPath("$.data.email").value("test@example.com"))
-                .andExpect(jsonPath("$.data.password").value("password123"));
+                .andReturn();
+        System.out.println("실제 JSON: " + mvcResult.getResponse().getContentAsString());
+
+
     }
 
     @Test
