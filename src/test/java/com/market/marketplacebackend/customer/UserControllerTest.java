@@ -1,6 +1,7 @@
 package com.market.marketplacebackend.customer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.market.marketplacebackend.common.ServiceResult;
 import com.market.marketplacebackend.customer.controller.UserController;
 import com.market.marketplacebackend.customer.domain.Customer;
 import com.market.marketplacebackend.customer.dto.LoginDto;
@@ -58,7 +59,9 @@ class UserControllerTest {
 
         Customer customer = signUpDto.toEntity();
 
-        when(userService.join(any(SignUpDto.class))).thenReturn(customer);
+        ServiceResult<Customer> result = ServiceResult.success("회원가입 성공",customer);
+
+        when(userService.join(any(SignUpDto.class))).thenReturn(result);
 
         // when & then
         mockMvc.perform(post("/user/signup")
@@ -66,8 +69,8 @@ class UserControllerTest {
                 .content(objectMapper.writeValueAsString(signUpDto)))
                         .andExpect(status().isOk())
                         .andExpect(jsonPath("$.success").value(true))
-                        .andExpect(jsonPath("$.message").value("회원 가입 성공"))
-                        .andExpect(jsonPath("$.code").value(200));
+                        .andExpect(jsonPath("$.message").value("회원가입 성공"))
+                        .andExpect(jsonPath("$.code").value("OK"));
 
         verify(userService, times(1)).join(any(SignUpDto.class));
     }
@@ -105,7 +108,9 @@ class UserControllerTest {
                 .email("test@example.com")
                 .build();
 
-        when(userService.login(any(LoginDto.class))).thenReturn(customer);
+        ServiceResult<Customer> result = ServiceResult.success("로그인 성공",customer);
+
+        when(userService.login(any(LoginDto.class))).thenReturn(result);
 
         //when & then
         MvcResult mvcResult = mockMvc.perform(post("/user/login")
@@ -113,7 +118,7 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsString(loginDto)))
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("로그인 성공"))
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value("OK"))
                 .andExpect(jsonPath("$.data.name").value("test"))
                 .andExpect(jsonPath("$.data.email").value("test@example.com"))
                 .andReturn();
