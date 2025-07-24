@@ -76,7 +76,7 @@ public class UserIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(signUpDto)))
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value(ErrorCode.EMAIL_DUPLICATE))
+                .andExpect(jsonPath("$.code").value(ErrorCode.EMAIL_DUPLICATE.getCode()))
                 .andExpect(jsonPath("$.message").value("이미 사용중인 이메일입니다"))
                 .andExpect(jsonPath("$.data").isEmpty())
                 .andExpect(jsonPath("$.timeStamp").exists());
