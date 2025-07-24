@@ -1,5 +1,6 @@
 package com.market.marketplacebackend.common;
 
+import com.market.marketplacebackend.common.exception.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

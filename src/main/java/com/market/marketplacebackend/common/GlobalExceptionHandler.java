@@ -1,5 +1,7 @@
 package com.market.marketplacebackend.common;
 
+import com.market.marketplacebackend.common.exception.BusinessException;
+import com.market.marketplacebackend.common.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +15,15 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ServiceResult<?>> handleBusinessException(BusinessException e){
+        ErrorCode errorCode = e.getErrorCode();
+        log.warn("BusinessException: {}", errorCode.getMessage());
+        return ResponseEntity
+                .status(errorCode.getStatus())
+                .body(ServiceResult.failure(errorCode,e.getMessage()));
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidationException(MethodArgumentNotValidException e){
