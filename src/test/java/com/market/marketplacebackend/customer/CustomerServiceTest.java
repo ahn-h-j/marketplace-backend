@@ -1,13 +1,14 @@
 package com.market.marketplacebackend.customer;
 
 // Removed unused import for UserController
-import com.market.marketplacebackend.common.ErrorCode;
+import com.market.marketplacebackend.common.exception.BusinessException;
+import com.market.marketplacebackend.common.exception.ErrorCode;
 import com.market.marketplacebackend.common.ServiceResult;
 import com.market.marketplacebackend.customer.domain.Customer;
 import com.market.marketplacebackend.customer.dto.LoginDto;
 import com.market.marketplacebackend.customer.dto.SignUpDto;
 import com.market.marketplacebackend.customer.repository.CustomerRepository;
-import com.market.marketplacebackend.customer.service.UserService;
+import com.market.marketplacebackend.customer.service.CustomerService;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,14 +20,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class UserServiceTest {
+public class CustomerServiceTest {
     @InjectMocks
-    private UserService userService;
+    private CustomerService customerService;
 
     @Mock
     private CustomerRepository customerRepository;
@@ -56,7 +59,7 @@ public class UserServiceTest {
         when(customerRepository.save(any(Customer.class)))
                 .thenReturn(customer);
         //when
-        ServiceResult<Customer> result = userService.join(signUpDto);
+        ServiceResult<Customer> result = customerService.join(signUpDto);
 
         //then
         assertThat(result.getData().getEmail()).isEqualTo(signUpDto.getEmail());
@@ -77,10 +80,10 @@ public class UserServiceTest {
         when(customerRepository.existsByEmail("test@example.com"))
                 .thenReturn(true);
         //when
-        ServiceResult<Customer> result = userService.join(signUpDto);
-        assertThat(result.getCode()).isEqualTo(ErrorCode.EMAIL_DUPLICATE);
-        assertThat(result.getMessage()).isEqualTo("이미 사용중인 이메일입니다");
+        BusinessException exception = assertThrows(BusinessException.class, () ->customerService.join(signUpDto));
+
         //then
+        assertEquals(ErrorCode.EMAIL_DUPLICATE, exception.getErrorCode());
         verify(customerRepository).existsByEmail("test@example.com");
     }
 
@@ -104,7 +107,7 @@ public class UserServiceTest {
         when(customerRepository.findByEmail("test@example.com")).thenReturn(Optional.ofNullable(customer));
 
         //when
-        ServiceResult<Customer> loginCustomer = userService.login(loginDto);
+        ServiceResult<Customer> loginCustomer = customerService.login(loginDto);
 
         //then
         assertThat(loginCustomer.getData().getEmail()).isEqualTo(loginDto.getEmail());
@@ -133,10 +136,10 @@ public class UserServiceTest {
         when(customerRepository.findByEmail("test@example.com")).thenReturn(Optional.ofNullable(customer));
 
         //when
-        ServiceResult<Customer> result = userService.login(loginDto);
-        assertThat(result.getCode()).isEqualTo(ErrorCode.PASSWORD_MISMATCH);
-        assertThat(result.getMessage()).isEqualTo("비밀번호가 일치하지 않습니다");
+        BusinessException exception = assertThrows(BusinessException.class, () ->customerService.login(loginDto));
+
         //then
+        assertEquals(ErrorCode.PASSWORD_MISMATCH, exception.getErrorCode());
         verify(customerRepository).findByEmail("test@example.com");
     }
 
@@ -150,11 +153,12 @@ public class UserServiceTest {
                 .build();
 
         when(customerRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
+
         //when
-        ServiceResult<Customer> result = userService.login(loginDto);
-        assertThat(result.getCode()).isEqualTo(ErrorCode.EMAIL_NOT_FOUND);
-        assertThat(result.getMessage()).isEqualTo("존재하지 않는 이메일입니다");
+        BusinessException exception = assertThrows(BusinessException.class, () ->customerService.login(loginDto));
+
         //then
+        assertEquals(ErrorCode.EMAIL_NOT_FOUND, exception.getErrorCode());
         verify(customerRepository).findByEmail("test@example.com");
     }
 }

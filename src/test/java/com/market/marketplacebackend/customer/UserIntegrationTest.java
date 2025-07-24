@@ -2,7 +2,7 @@ package com.market.marketplacebackend.customer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.market.marketplacebackend.common.ErrorCode;
+import com.market.marketplacebackend.common.exception.ErrorCode;
 import com.market.marketplacebackend.common.ServiceResult;
 import com.market.marketplacebackend.customer.domain.Customer;
 import com.market.marketplacebackend.customer.dto.LoginDto;
@@ -139,8 +139,8 @@ public class UserIntegrationTest {
         mockMvc.perform(post("/user/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginDto)))
-                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("PASSWORD_MISMATCH"))
                 .andExpect(jsonPath("$.message").value("비밀번호가 일치하지 않습니다"));
 
     }
@@ -164,8 +164,8 @@ public class UserIntegrationTest {
         mockMvc.perform(post("/user/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginDto)))
-                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("EMAIL_NOT_FOUND"))
                 .andExpect(jsonPath("$.message").value("존재하지 않는 이메일입니다"));
 
     }

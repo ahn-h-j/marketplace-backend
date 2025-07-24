@@ -2,12 +2,11 @@ package com.market.marketplacebackend.customer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.market.marketplacebackend.common.ServiceResult;
-import com.market.marketplacebackend.customer.controller.UserController;
+import com.market.marketplacebackend.customer.controller.CustomerController;
 import com.market.marketplacebackend.customer.domain.Customer;
 import com.market.marketplacebackend.customer.dto.LoginDto;
 import com.market.marketplacebackend.customer.dto.SignUpDto;
-import com.market.marketplacebackend.customer.repository.CustomerRepository;
-import com.market.marketplacebackend.customer.service.UserService;
+import com.market.marketplacebackend.customer.service.CustomerService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -26,23 +25,20 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
-class UserControllerTest {
+class CustomerControllerTest {
 
     @Mock
-    private UserService userService;
+    private CustomerService customerService;
 
     @InjectMocks
-    private UserController userController;
-
-    @Mock
-    private CustomerRepository customerRepository;
+    private CustomerController customerController;
 
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(customerController).build();
         objectMapper = new ObjectMapper();
     }
 
@@ -61,7 +57,7 @@ class UserControllerTest {
 
         ServiceResult<Customer> result = ServiceResult.success("회원가입 성공",customer);
 
-        when(userService.join(any(SignUpDto.class))).thenReturn(result);
+        when(customerService.join(any(SignUpDto.class))).thenReturn(result);
 
         // when & then
         mockMvc.perform(post("/user/signup")
@@ -72,7 +68,7 @@ class UserControllerTest {
                         .andExpect(jsonPath("$.message").value("회원가입 성공"))
                         .andExpect(jsonPath("$.code").value("OK"));
 
-        verify(userService, times(1)).join(any(SignUpDto.class));
+        verify(customerService, times(1)).join(any(SignUpDto.class));
     }
 
     @Test
@@ -110,7 +106,7 @@ class UserControllerTest {
 
         ServiceResult<Customer> result = ServiceResult.success("로그인 성공",customer);
 
-        when(userService.login(any(LoginDto.class))).thenReturn(result);
+        when(customerService.login(any(LoginDto.class))).thenReturn(result);
 
         //when & then
         MvcResult mvcResult = mockMvc.perform(post("/user/login")
