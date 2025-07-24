@@ -1,6 +1,7 @@
 package com.market.marketplacebackend.customer.service;
 
-import com.market.marketplacebackend.common.ErrorCode;
+import com.market.marketplacebackend.common.exception.BusinessException;
+import com.market.marketplacebackend.common.exception.ErrorCode;
 import com.market.marketplacebackend.common.ServiceResult;
 import com.market.marketplacebackend.customer.domain.Customer;
 import com.market.marketplacebackend.customer.dto.LoginDto;
@@ -12,14 +13,14 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final HttpSession httpSession;
 
     public ServiceResult<Customer> join(SignUpDto signUpDto) {
         if(customerRepository.existsByEmail(signUpDto.getEmail())){
-            return ServiceResult.failure(ErrorCode.EMAIL_DUPLICATE, "이미 사용중인 이메일입니다");
+            throw new BusinessException(ErrorCode.EMAIL_DUPLICATE);
         }
 
         Customer customer = signUpDto.toEntity();
@@ -30,14 +31,10 @@ public class UserService {
 
     public ServiceResult<Customer> login(LoginDto loginDto) {
         Customer customer = customerRepository.findByEmail(loginDto.getEmail())
-                .orElse(null);
-
-        if (customer == null) {
-            return ServiceResult.failure(ErrorCode.EMAIL_NOT_FOUND, "존재하지 않는 이메일입니다");
-        }
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMAIL_NOT_FOUND));
 
         if(!customer.getPassword().equals(loginDto.getPassword())){
-            return ServiceResult.failure(ErrorCode.PASSWORD_MISMATCH, "비밀번호가 일치하지 않습니다");
+            throw new BusinessException(ErrorCode.PASSWORD_MISMATCH);
         }
 
         httpSession.setAttribute("UserId",customer.getId());
