@@ -21,8 +21,8 @@ public class ServiceResult<T> {
         return new ServiceResult<>(true, "OK", message, data,LocalDateTime.now());
     }
 
-    public static <T> ServiceResult<T> failure(String errorCode, String message){
-        return new ServiceResult<>(false, errorCode, message, null,LocalDateTime.now());
+    public static <T> ServiceResult<T> failure(ErrorCode errorCode, String message){
+        return new ServiceResult<>(false, errorCode, message, null, LocalDateTime.now());
     }
 }
 
