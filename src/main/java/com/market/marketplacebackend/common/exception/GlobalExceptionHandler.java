@@ -1,7 +1,6 @@
-package com.market.marketplacebackend.common;
+package com.market.marketplacebackend.common.exception;
 
-import com.market.marketplacebackend.common.exception.BusinessException;
-import com.market.marketplacebackend.common.exception.ErrorCode;
+import com.market.marketplacebackend.common.ServiceResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
