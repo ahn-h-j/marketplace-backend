@@ -1,12 +1,12 @@
-package com.market.marketplacebackend.customer;
+package com.market.marketplacebackend.account;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.market.marketplacebackend.common.ServiceResult;
-import com.market.marketplacebackend.customer.controller.CustomerController;
-import com.market.marketplacebackend.customer.domain.Customer;
-import com.market.marketplacebackend.customer.dto.LoginDto;
-import com.market.marketplacebackend.customer.dto.SignUpDto;
-import com.market.marketplacebackend.customer.service.CustomerService;
+import com.market.marketplacebackend.account.controller.AccountController;
+import com.market.marketplacebackend.account.domain.Account;
+import com.market.marketplacebackend.account.dto.LoginDto;
+import com.market.marketplacebackend.account.dto.SignUpDto;
+import com.market.marketplacebackend.account.service.AccountService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -25,20 +25,20 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
-class CustomerControllerTest {
+class AccountControllerTest {
 
     @Mock
-    private CustomerService customerService;
+    private AccountService accountService;
 
     @InjectMocks
-    private CustomerController customerController;
+    private AccountController accountController;
 
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(customerController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(accountController).build();
         objectMapper = new ObjectMapper();
     }
 
@@ -53,11 +53,11 @@ class CustomerControllerTest {
                 .phoneNumber("010-1234-5678")
                 .build();
 
-        Customer customer = signUpDto.toEntity();
+        Account account = signUpDto.toEntity();
 
-        ServiceResult<Customer> result = ServiceResult.success("회원가입 성공",customer);
+        ServiceResult<Account> result = ServiceResult.success("회원가입 성공", account);
 
-        when(customerService.join(any(SignUpDto.class))).thenReturn(result);
+        when(accountService.join(any(SignUpDto.class))).thenReturn(result);
 
         // when & then
         mockMvc.perform(post("/user/signup")
@@ -68,7 +68,7 @@ class CustomerControllerTest {
                         .andExpect(jsonPath("$.message").value("회원가입 성공"))
                         .andExpect(jsonPath("$.code").value("OK"));
 
-        verify(customerService, times(1)).join(any(SignUpDto.class));
+        verify(accountService, times(1)).join(any(SignUpDto.class));
     }
 
     @Test
@@ -98,15 +98,15 @@ class CustomerControllerTest {
                 .email("test@example.com")
                 .password("password123")
                 .build();
-        Customer customer = Customer.builder()
+        Account account = Account.builder()
                 .id(1L)
                 .name("test")
                 .email("test@example.com")
                 .build();
 
-        ServiceResult<Customer> result = ServiceResult.success("로그인 성공",customer);
+        ServiceResult<Account> result = ServiceResult.success("로그인 성공", account);
 
-        when(customerService.login(any(LoginDto.class))).thenReturn(result);
+        when(accountService.login(any(LoginDto.class))).thenReturn(result);
 
         //when & then
         MvcResult mvcResult = mockMvc.perform(post("/user/login")

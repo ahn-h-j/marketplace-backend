@@ -1,6 +1,6 @@
-package com.market.marketplacebackend.customer.dto;
+package com.market.marketplacebackend.account.dto;
 
-import com.market.marketplacebackend.customer.domain.Customer;
+import com.market.marketplacebackend.account.domain.Account;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -28,8 +28,8 @@ public class SignUpDto {
     )
     private String phoneNumber;
 
-    public Customer toEntity(){
-        return Customer.builder()
+    public Account toEntity(){
+        return Account.builder()
                 .name(name)
                 .email(email)
                 .password(password)

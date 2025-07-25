@@ -1,4 +1,4 @@
-package com.market.marketplacebackend.customer.domain;
+package com.market.marketplacebackend.account.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Getter
-public class Customer {
+public class Account {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
