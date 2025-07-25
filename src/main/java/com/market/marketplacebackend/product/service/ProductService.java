@@ -7,11 +7,14 @@ import com.market.marketplacebackend.common.exception.BusinessException;
 import com.market.marketplacebackend.common.exception.ErrorCode;
 import com.market.marketplacebackend.product.domain.Product;
 import com.market.marketplacebackend.product.dto.ProductCreateRequestDto;
+import com.market.marketplacebackend.product.dto.ProductUpdateRequestDto;
 import com.market.marketplacebackend.product.repository.ProductRepository;
-import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -32,5 +35,20 @@ public class ProductService {
         Product product = productCreateRequestDto.toEntity(account);
 
         return productRepository.save(product);
+    }
+
+    @Transactional
+    public Product updateProduct(Long accountId, Long productId, @Valid ProductUpdateRequestDto productUpdateRequestDto) {
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        if(!Objects.equals(product.getAccount().getId(), accountId)){
+            throw new BusinessException(ErrorCode.FORBIDDEN_PRODUCT);
+        }
+
+        product.updateIfChanged(productUpdateRequestDto);
+
+        return product;
     }
 }

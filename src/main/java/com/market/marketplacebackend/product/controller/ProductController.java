@@ -4,6 +4,7 @@ import com.market.marketplacebackend.common.ServiceResult;
 import com.market.marketplacebackend.product.domain.Product;
 import com.market.marketplacebackend.product.dto.ProductCreateRequestDto;
 import com.market.marketplacebackend.product.dto.ProductDetailResponseDto;
+import com.market.marketplacebackend.product.dto.ProductUpdateRequestDto;
 import com.market.marketplacebackend.product.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,5 +36,18 @@ public class ProductController {
 
         ServiceResult<ProductDetailResponseDto> finalResult = ServiceResult.success("상품 등록 완료", responseDto);
         return ResponseEntity.created(location).body(finalResult);
+    }
+
+    @PatchMapping("/{productId}")
+    public ResponseEntity<ServiceResult<ProductDetailResponseDto>> updateProduct(@Valid @RequestBody ProductUpdateRequestDto productUpdateRequestDto,
+                                                                                 @RequestParam Long accountId,
+                                                                                 @PathVariable Long productId
+    ){
+        Product serviceResult = productService.updateProduct(accountId, productId, productUpdateRequestDto);
+
+        ProductDetailResponseDto responseDto = ProductDetailResponseDto.fromEntity(serviceResult);
+
+        ServiceResult<ProductDetailResponseDto> finalResult = ServiceResult.success("상품 수정 완료", responseDto);
+        return ResponseEntity.ok(finalResult);
     }
 }
