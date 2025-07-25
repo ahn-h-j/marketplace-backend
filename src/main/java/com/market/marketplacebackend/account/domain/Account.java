@@ -1,6 +1,7 @@
 package com.market.marketplacebackend.account.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.market.marketplacebackend.common.enums.AccountRole;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -25,4 +26,5 @@ public class Account {
     @JsonIgnore
     private String password;
     private String phoneNumber;
+    private AccountRole accountRole;
 }
