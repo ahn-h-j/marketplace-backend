@@ -10,7 +10,6 @@ import com.market.marketplacebackend.product.domain.Product;
 import com.market.marketplacebackend.product.dto.ProductCreateRequestDto;
 import com.market.marketplacebackend.product.dto.ProductUpdateRequestDto;
 import com.market.marketplacebackend.product.repository.ProductRepository;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,13 +26,11 @@ public class ProductService {
     private final ProductRepository productRepository;
 
     @Transactional
-    public Product createProduct(Long accountId, @Valid ProductCreateRequestDto productCreateRequestDto) {
+    public Product createProduct(Long accountId, ProductCreateRequestDto productCreateRequestDto) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
 
-        if(!account.getAccountRole().equals(AccountRole.SELLER)){
-            throw new BusinessException(ErrorCode.FORBIDDEN_NOT_SELLER);
-        }
+        verifyIsSeller(account);
 
         Product product = productCreateRequestDto.toEntity(account);
 
@@ -41,14 +38,11 @@ public class ProductService {
     }
 
     @Transactional
-    public Product updateProduct(Long accountId, Long productId, @Valid ProductUpdateRequestDto productUpdateRequestDto) {
-
+    public Product updateProduct(Long accountId, Long productId, ProductUpdateRequestDto productUpdateRequestDto) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        if(!Objects.equals(product.getAccount().getId(), accountId)){
-            throw new BusinessException(ErrorCode.FORBIDDEN_PRODUCT);
-        }
+        checkProductOwnership(product, accountId);
 
         product.updateIfChanged(productUpdateRequestDto);
 
@@ -60,9 +54,7 @@ public class ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        if(!Objects.equals(product.getAccount().getId(), accountId)){
-            throw new BusinessException(ErrorCode.FORBIDDEN_PRODUCT);
-        }
+        checkProductOwnership(product, accountId);
 
         productRepository.delete(product);
     }
@@ -70,11 +62,29 @@ public class ProductService {
     @Transactional(readOnly = true)
     public Page<Product> findAllProducts(String categoryInput, Pageable pageable) {
         if (categoryInput == null || categoryInput.isBlank()) {
-            return productRepository.findAll(pageable);
+            return productRepository.findAllFetchJoin(pageable);
         } else{
             Category category = Category.fromName(categoryInput)
                     .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
             return productRepository.findAllByCategory(category, pageable);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Product findDetailProducts(Long productId) {
+        return productRepository.findByIdWithAccount(productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+    }
+
+    private void checkProductOwnership(Product product, Long accountId) {
+        if (!Objects.equals(product.getAccount().getId(), accountId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN_PRODUCT);
+        }
+    }
+
+    private void verifyIsSeller(Account account) {
+        if (account.getAccountRole() != AccountRole.SELLER) {
+            throw new BusinessException(ErrorCode.FORBIDDEN_NOT_SELLER);
         }
     }
 }

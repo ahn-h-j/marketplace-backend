@@ -76,4 +76,15 @@ public class ProductController {
         ServiceResult<Page<ProductResponseDto>> finalResult = ServiceResult.success("상품 전체 조회 완료", responseDto);
         return ResponseEntity.ok(finalResult);
     }
+
+    @GetMapping("/{productId}")
+    public ResponseEntity<ServiceResult<ProductDetailResponseDto>> findDetailProducts(
+            @PathVariable Long productId
+    ){
+        Product serviceResult = productService.findDetailProducts(productId);
+
+        ProductDetailResponseDto productDetailResponseDto = ProductDetailResponseDto.fromEntity(serviceResult);
+        ServiceResult<ProductDetailResponseDto> finalResult = ServiceResult.success("상품 상세 조회 완료", productDetailResponseDto);
+        return ResponseEntity.ok(finalResult);
+    }
 }
