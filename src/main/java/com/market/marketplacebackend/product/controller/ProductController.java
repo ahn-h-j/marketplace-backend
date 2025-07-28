@@ -65,9 +65,10 @@ public class ProductController {
 
     @GetMapping
     public ResponseEntity<ServiceResult<Page<ProductResponseDto>>> findAllProducts(
+            @RequestParam(required = false) String category,
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable
     ){
-        Page<Product> serviceResult = productService.findAllProducts(pageable);
+        Page<Product> serviceResult = productService.findAllProducts(category, pageable);
 
         Page<ProductResponseDto> responseDto = serviceResult
                 .map(ProductResponseDto::fromEntity);
@@ -75,5 +76,4 @@ public class ProductController {
         ServiceResult<Page<ProductResponseDto>> finalResult = ServiceResult.success("상품 전체 조회 완료", responseDto);
         return ResponseEntity.ok(finalResult);
     }
-
 }

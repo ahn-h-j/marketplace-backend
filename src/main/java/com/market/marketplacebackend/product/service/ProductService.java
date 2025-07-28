@@ -3,6 +3,7 @@ package com.market.marketplacebackend.product.service;
 import com.market.marketplacebackend.account.domain.Account;
 import com.market.marketplacebackend.account.repository.AccountRepository;
 import com.market.marketplacebackend.common.enums.AccountRole;
+import com.market.marketplacebackend.common.enums.Category;
 import com.market.marketplacebackend.common.exception.BusinessException;
 import com.market.marketplacebackend.common.exception.ErrorCode;
 import com.market.marketplacebackend.product.domain.Product;
@@ -67,8 +68,13 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Product> findAllProducts(Pageable pageable) {
-
-        return productRepository.findAllFetchJoin(pageable);
+    public Page<Product> findAllProducts(String categoryInput, Pageable pageable) {
+        if (categoryInput == null || categoryInput.isBlank()) {
+            return productRepository.findAll(pageable);
+        } else{
+            Category category = Category.fromName(categoryInput)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
+            return productRepository.findAllByCategory(category, pageable);
+        }
     }
 }

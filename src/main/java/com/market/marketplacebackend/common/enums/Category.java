@@ -3,6 +3,9 @@ package com.market.marketplacebackend.common.enums;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Arrays;
+import java.util.Optional;
+
 @Getter
 @RequiredArgsConstructor
 public enum Category {
@@ -17,4 +20,12 @@ public enum Category {
 
     private final String categoryName;
 
+    public static Optional<Category> fromName(String categoryName){
+        if(categoryName == null || categoryName.trim().isEmpty()){
+            return Optional.empty();
+        }
+        return Arrays.stream(Category.values())
+                .filter(category -> category.name().equalsIgnoreCase(categoryName.trim()))
+                .findFirst();
+    }
 }
