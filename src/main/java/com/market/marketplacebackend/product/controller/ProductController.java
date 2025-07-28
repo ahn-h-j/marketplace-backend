@@ -4,6 +4,7 @@ import com.market.marketplacebackend.common.ServiceResult;
 import com.market.marketplacebackend.product.domain.Product;
 import com.market.marketplacebackend.product.dto.ProductCreateRequestDto;
 import com.market.marketplacebackend.product.dto.ProductDetailResponseDto;
+import com.market.marketplacebackend.product.dto.ProductResponseDto;
 import com.market.marketplacebackend.product.dto.ProductUpdateRequestDto;
 import com.market.marketplacebackend.product.service.ProductService;
 import jakarta.validation.Valid;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.List;
 
 @RestController
 @RequestMapping("/product")
@@ -56,5 +58,17 @@ public class ProductController {
         productService.deleteProduct(accountId, productId);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping()
+    public ResponseEntity<ServiceResult<List<ProductResponseDto>>> findAllProducts(){
+        List<Product> serviceResult = productService.findAllProducts();
+
+        List<ProductResponseDto> responseDto = serviceResult.stream()
+                .map(ProductResponseDto::fromEntity)
+                .toList();
+
+        ServiceResult<List<ProductResponseDto>> finalResult = ServiceResult.success("상품 전체 조회 완료", responseDto);
+        return ResponseEntity.ok(finalResult);
     }
 }
