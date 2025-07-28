@@ -50,4 +50,11 @@ public class ProductController {
         ServiceResult<ProductDetailResponseDto> finalResult = ServiceResult.success("상품 수정 완료", responseDto);
         return ResponseEntity.ok(finalResult);
     }
+
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<?> deleteProduct(@RequestParam Long accountId, @PathVariable Long productId){
+        productService.deleteProduct(accountId, productId);
+
+        return ResponseEntity.noContent().build();
+    }
 }

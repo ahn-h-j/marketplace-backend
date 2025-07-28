@@ -51,4 +51,15 @@ public class ProductService {
 
         return product;
     }
+
+    public void deleteProduct(Long accountId, Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        if(!Objects.equals(product.getAccount().getId(), accountId)){
+            throw new BusinessException(ErrorCode.FORBIDDEN_PRODUCT);
+        }
+
+        productRepository.delete(product);
+    }
 }
