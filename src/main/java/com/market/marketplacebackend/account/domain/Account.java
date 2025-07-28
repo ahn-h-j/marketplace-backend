@@ -2,10 +2,7 @@ package com.market.marketplacebackend.account.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.market.marketplacebackend.common.enums.AccountRole;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,5 +23,6 @@ public class Account {
     @JsonIgnore
     private String password;
     private String phoneNumber;
+    @Enumerated(EnumType.STRING) // <- 이 어노테이션을 추가
     private AccountRole accountRole;
 }
