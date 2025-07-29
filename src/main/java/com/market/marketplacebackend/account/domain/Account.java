@@ -23,6 +23,6 @@ public class Account {
     @JsonIgnore
     private String password;
     private String phoneNumber;
-    @Enumerated(EnumType.STRING) // <- 이 어노테이션을 추가
+    @Enumerated(EnumType.STRING)
     private AccountRole accountRole;
 }
