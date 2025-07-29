@@ -22,7 +22,7 @@ public class Product {
     private Integer price;
     private String description;
     private Integer stock;
-    @Enumerated(EnumType.STRING) // <- 이 어노테이션을 추가
+    @Enumerated(EnumType.STRING)
     private Category category;
     @ManyToOne
     @JoinColumn(name = "account_id")
