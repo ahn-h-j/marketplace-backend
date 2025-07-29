@@ -10,6 +10,11 @@ public enum ErrorCode {
 
     // 회원가입 관련
     EMAIL_DUPLICATE(HttpStatus.CONFLICT, "EMAIL_DUPLICATE", "이미 사용중인 이메일입니다"),
+
+    // 회원정보 관련
+    ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "ACCOUNT_NOT_FOUND", "존재하지 않는 계정입니다."),
+    FORBIDDEN_NOT_SELLER(HttpStatus.FORBIDDEN, "FORBIDDEN_NOT_SELLER", "셀러 권한이 없는 계정입니다."),
+
     // 로그인 관련
     EMAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "EMAIL_NOT_FOUND", "존재하지 않는 이메일입니다"),
     PASSWORD_MISMATCH(HttpStatus.UNAUTHORIZED, "PASSWORD_MISMATCH", "비밀번호가 일치하지 않습니다"),
@@ -19,8 +24,12 @@ public enum ErrorCode {
 
     // 서버 오류 관련
     DB_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "DB_ERROR", "데이터베이스 오류가 발생했습니다."),
-    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "서버 내부 오류가 발생했습니다.");
+    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "서버 내부 오류가 발생했습니다."),
 
+    // 상품 관련
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT_NOT_FOUND", "존재하지 않는 상품입니다."),
+    FORBIDDEN_PRODUCT(HttpStatus.FORBIDDEN, "FORBIDDEN_PRODUCT", "해당 상품에 대한 권한이 없습니다."),
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CATEGORY_NOT_FOUND", "존재하지 않는 카테고리입니다.");
 
 
     private final HttpStatus status;

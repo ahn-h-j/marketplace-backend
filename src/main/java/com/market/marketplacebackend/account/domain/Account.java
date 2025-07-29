@@ -1,10 +1,8 @@
-package com.market.marketplacebackend.customer.domain;
+package com.market.marketplacebackend.account.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.market.marketplacebackend.common.enums.AccountRole;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Getter
-public class Customer {
+public class Account {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,4 +23,6 @@ public class Customer {
     @JsonIgnore
     private String password;
     private String phoneNumber;
+    @Enumerated(EnumType.STRING)
+    private AccountRole accountRole;
 }

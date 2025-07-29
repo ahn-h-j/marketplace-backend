@@ -1,13 +1,13 @@
-package com.market.marketplacebackend.customer;
+package com.market.marketplacebackend.account;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.market.marketplacebackend.common.exception.ErrorCode;
 import com.market.marketplacebackend.common.ServiceResult;
-import com.market.marketplacebackend.customer.domain.Customer;
-import com.market.marketplacebackend.customer.dto.LoginDto;
-import com.market.marketplacebackend.customer.dto.SignUpDto;
-import com.market.marketplacebackend.customer.repository.CustomerRepository;
+import com.market.marketplacebackend.account.domain.Account;
+import com.market.marketplacebackend.account.dto.LoginDto;
+import com.market.marketplacebackend.account.dto.SignUpDto;
+import com.market.marketplacebackend.account.repository.AccountRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +35,7 @@ public class UserIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
     @Autowired
-    private CustomerRepository customerRepository;
+    private AccountRepository accountRepository;
 
     @Test
     @DisplayName("회원가입 통합 성공 테스트")
@@ -54,7 +54,7 @@ public class UserIntegrationTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("회원 가입 성공"));
 
-        Optional<Customer> customer = customerRepository.findByEmail("test@example.com");
+        Optional<Account> customer = accountRepository.findByEmail("test@example.com");
         assertThat(customer).isPresent();
         assertThat(customer.get().getName()).isEqualTo("test");
     }
@@ -69,8 +69,8 @@ public class UserIntegrationTest {
                 .phoneNumber("010-1234-5678")
                 .build();
 
-        Customer customer = signUpDto.toEntity();
-        customerRepository.save(customer);
+        Account account = signUpDto.toEntity();
+        accountRepository.save(account);
 
         mockMvc.perform(post("/user/signup")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -92,13 +92,13 @@ public class UserIntegrationTest {
                 .password("password123")
                 .build();
 
-        Customer customer = Customer.builder()
+        Account account = Account.builder()
                 .name("test")
                 .email("test@example.com")
                 .password("password123")
                 .phoneNumber("010-1234-5678")
                 .build();
-        customerRepository.save(customer);
+        accountRepository.save(account);
 
         MvcResult result = mockMvc.perform(post("/user/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -111,8 +111,8 @@ public class UserIntegrationTest {
                 .andReturn();
 
         String response =  result.getResponse().getContentAsString();
-        TypeReference<ServiceResult<Customer>> typeRef = new TypeReference<>() {};
-        ServiceResult<Customer> responseDto = objectMapper.readValue(response, typeRef);
+        TypeReference<ServiceResult<Account>> typeRef = new TypeReference<>() {};
+        ServiceResult<Account> responseDto = objectMapper.readValue(response, typeRef);
 
         assertThat(responseDto.isSuccess()).isTrue();
         assertThat(responseDto.getMessage()).isEqualTo("로그인 성공");
@@ -128,13 +128,13 @@ public class UserIntegrationTest {
                 .password("invalidPW123")
                 .build();
 
-        Customer customer = Customer.builder()
+        Account account = Account.builder()
                 .name("test")
                 .email("test@example.com")
                 .password("password123")
                 .phoneNumber("010-1234-5678")
                 .build();
-        customerRepository.save(customer);
+        accountRepository.save(account);
 
         mockMvc.perform(post("/user/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -153,13 +153,13 @@ public class UserIntegrationTest {
                 .password("password123")
                 .build();
 
-        Customer customer = Customer.builder()
+        Account account = Account.builder()
                 .name("test")
                 .email("test@example.com")
                 .password("password123")
                 .phoneNumber("010-1234-5678")
                 .build();
-        customerRepository.save(customer);
+        accountRepository.save(account);
 
         mockMvc.perform(post("/user/login")
                         .contentType(MediaType.APPLICATION_JSON)

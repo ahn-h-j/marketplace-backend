@@ -1,6 +1,6 @@
-package com.market.marketplacebackend.customer.dto;
+package com.market.marketplacebackend.account.dto;
 
-import com.market.marketplacebackend.customer.domain.Customer;
+import com.market.marketplacebackend.account.domain.Account;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -20,8 +20,8 @@ public class LoginDto {
     @NotBlank(message = "비밀번호를 입력해주세요")
     private String password;
 
-    public Customer toEntity(){
-        return Customer.builder()
+    public Account toEntity(){
+        return Account.builder()
                 .email(email)
                 .password(password)
                 .build();

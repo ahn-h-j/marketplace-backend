@@ -1,6 +1,7 @@
-package com.market.marketplacebackend.customer.dto;
+package com.market.marketplacebackend.account.dto;
 
-import com.market.marketplacebackend.customer.domain.Customer;
+import com.market.marketplacebackend.account.domain.Account;
+import com.market.marketplacebackend.common.enums.AccountRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -27,13 +28,15 @@ public class SignUpDto {
             message = "전화번호는 000-0000-0000 형식이어야 합니다"
     )
     private String phoneNumber;
+    private AccountRole accountRole;
 
-    public Customer toEntity(){
-        return Customer.builder()
+    public Account toEntity(){
+        return Account.builder()
                 .name(name)
                 .email(email)
                 .password(password)
                 .phoneNumber(phoneNumber)
+                .accountRole(accountRole)
                 .build();
     }
 }

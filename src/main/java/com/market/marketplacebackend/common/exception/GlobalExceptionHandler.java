@@ -1,10 +1,10 @@
-package com.market.marketplacebackend.common;
+package com.market.marketplacebackend.common.exception;
 
-import com.market.marketplacebackend.common.exception.BusinessException;
-import com.market.marketplacebackend.common.exception.ErrorCode;
+import com.market.marketplacebackend.common.ServiceResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -55,6 +55,16 @@ public class GlobalExceptionHandler {
                 "success", false,
                 "message", "서버 내부 오류가 발생했습니다",
                 "code", "INTERNAL_ERROR"
+        ));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<?> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        log.warn("Bad Request: {}", e.getMessage());
+        return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "요청 형식이 올바르지 않습니다. 데이터 타입을 확인해주세요.",
+                "code", "INVALID_FORMAT"
         ));
     }
 }
