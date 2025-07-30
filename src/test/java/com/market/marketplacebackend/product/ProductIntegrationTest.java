@@ -201,8 +201,8 @@ public class ProductIntegrationTest {
                 .build();
         accountRepository.save(seller);
         Account otherSeller = Account.builder()
-                .name("테스트판매자")
-                .email("seller@test.com")
+                .name("다른테스트판매자")
+                .email("other_seller@test.com")
                 .password("password")
                 .accountRole(AccountRole.SELLER)
                 .build();
