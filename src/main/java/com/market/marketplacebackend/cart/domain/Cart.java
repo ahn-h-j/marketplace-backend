@@ -30,4 +30,9 @@ public class Cart {
     public Cart(Account account) {
         this.account = account;
     }
+
+    public void addCartItem(CartItem cartItem) {
+        this.cartItems.add(cartItem);
+        cartItem.setCart(this);
+    }
 }

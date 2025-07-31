@@ -1,18 +1,66 @@
 package com.market.marketplacebackend.cart.service;
 
 import com.market.marketplacebackend.cart.domain.Cart;
+import com.market.marketplacebackend.cart.domain.CartItem;
+import com.market.marketplacebackend.cart.dto.CartAddRequestDto;
+import com.market.marketplacebackend.cart.repository.CartItemRepository;
 import com.market.marketplacebackend.cart.repository.CartRepository;
 import com.market.marketplacebackend.common.exception.BusinessException;
 import com.market.marketplacebackend.common.exception.ErrorCode;
+import com.market.marketplacebackend.product.domain.Product;
+import com.market.marketplacebackend.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class CartService {
+
     private final CartRepository cartRepository;
-    public Cart getCartByUserId(Long userId) {
-        return cartRepository.findById(userId)
+    private final ProductRepository productRepository;
+    private final CartItemRepository cartItemRepository;
+
+    @Transactional(readOnly = true)
+    public Cart getCart(Long accountId) {
+        return cartRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
+    }
+
+    @Transactional
+    public CartItem addItemToCart(Long accountId, CartAddRequestDto cartAddRequestDto) {
+        Cart cart = cartRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
+
+        Product product = productRepository.findById(cartAddRequestDto.getProductId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        Optional<CartItem> existingCartItem = cart.getCartItems().stream()
+                .filter(item -> item.getProduct().getId().equals(product.getId()))
+                .findFirst();
+
+        CartItem finalCartItem = addOrUpdateCartItem(cartAddRequestDto, existingCartItem, product, cart);
+
+        cartItemRepository.save(finalCartItem);
+
+        return finalCartItem;
+    }
+
+    private static CartItem addOrUpdateCartItem(CartAddRequestDto cartAddRequestDto, Optional<CartItem> existingCartItem, Product product, Cart cart) {
+        CartItem finalCartItem;
+        if (existingCartItem.isPresent()) {
+            finalCartItem = existingCartItem.get();
+            finalCartItem.addQuantity(cartAddRequestDto.getQuantity());
+        } else {
+            finalCartItem = CartItem.builder()
+                    .product(product)
+                    .quantity(cartAddRequestDto.getQuantity())
+                    .build();
+
+            cart.addCartItem(finalCartItem);
+        }
+        return finalCartItem;
     }
 }

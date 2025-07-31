@@ -28,4 +28,12 @@ public class CartItem {
 
     @Column(nullable = false)
     private int quantity;
+
+    public void addQuantity(Integer quantity) {
+        this.quantity += quantity;
+    }
+
+    public void setCart(Cart cart) {
+        this.cart = cart;
+    }
 }
