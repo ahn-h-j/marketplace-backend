@@ -29,8 +29,10 @@ public enum ErrorCode {
     // 상품 관련
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT_NOT_FOUND", "존재하지 않는 상품입니다."),
     FORBIDDEN_PRODUCT(HttpStatus.FORBIDDEN, "FORBIDDEN_PRODUCT", "해당 상품에 대한 권한이 없습니다."),
-    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CATEGORY_NOT_FOUND", "존재하지 않는 카테고리입니다.");
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CATEGORY_NOT_FOUND", "존재하지 않는 카테고리입니다."),
 
+    //장바구니 관련
+    CART_NOT_FOUND(HttpStatus.NOT_FOUND, "CART_NOT_FOUND", "카트가 존재하지 않습니다.");
 
     private final HttpStatus status;
     private final String code;
