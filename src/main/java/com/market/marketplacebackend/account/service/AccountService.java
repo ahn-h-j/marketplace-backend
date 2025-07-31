@@ -1,5 +1,7 @@
 package com.market.marketplacebackend.account.service;
 
+import com.market.marketplacebackend.cart.domain.Cart;
+import com.market.marketplacebackend.cart.repository.CartRepository;
 import com.market.marketplacebackend.common.exception.BusinessException;
 import com.market.marketplacebackend.common.exception.ErrorCode;
 import com.market.marketplacebackend.common.ServiceResult;
@@ -17,6 +19,7 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final HttpSession httpSession;
+    private final CartRepository cartRepository;
 
     public ServiceResult<Account> join(SignUpDto signUpDto) {
         if(accountRepository.existsByEmail(signUpDto.getEmail())){
@@ -25,6 +28,7 @@ public class AccountService {
 
         Account account = signUpDto.toEntity();
         Account savedAccount = accountRepository.save(account);
+        cartRepository.save(new Cart(account));
 
         return ServiceResult.success("회원 가입 성공", savedAccount);
     }
