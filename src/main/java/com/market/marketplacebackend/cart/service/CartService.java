@@ -2,7 +2,8 @@ package com.market.marketplacebackend.cart.service;
 
 import com.market.marketplacebackend.cart.domain.Cart;
 import com.market.marketplacebackend.cart.domain.CartItem;
-import com.market.marketplacebackend.cart.dto.CartAddRequestDto;
+import com.market.marketplacebackend.cart.dto.CartItemAddRequestDto;
+import com.market.marketplacebackend.cart.dto.CartItemUpdateDto;
 import com.market.marketplacebackend.cart.repository.CartItemRepository;
 import com.market.marketplacebackend.cart.repository.CartRepository;
 import com.market.marketplacebackend.common.exception.BusinessException;
@@ -30,33 +31,45 @@ public class CartService {
     }
 
     @Transactional
-    public CartItem addItemToCart(Long accountId, CartAddRequestDto cartAddRequestDto) {
+    public CartItem addItemToCart(Long accountId, CartItemAddRequestDto cartItemAddRequestDto) {
         Cart cart = cartRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
 
-        Product product = productRepository.findById(cartAddRequestDto.getProductId())
+        Product product = productRepository.findById(cartItemAddRequestDto.getProductId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        Optional<CartItem> existingCartItem = cart.getCartItems().stream()
-                .filter(item -> item.getProduct().getId().equals(product.getId()))
-                .findFirst();
+        Optional<CartItem> existingCartItem = cartItemRepository.findByCartAndProduct(cart, product);
 
-        CartItem finalCartItem = addOrUpdateCartItem(cartAddRequestDto, existingCartItem, product, cart);
+        CartItem finalCartItem = addOrUpdateCartItem(cartItemAddRequestDto, existingCartItem, product, cart);
 
         cartItemRepository.save(finalCartItem);
 
         return finalCartItem;
     }
 
-    private static CartItem addOrUpdateCartItem(CartAddRequestDto cartAddRequestDto, Optional<CartItem> existingCartItem, Product product, Cart cart) {
+    @Transactional
+    public CartItem updateItem(Long accountId, CartItemUpdateDto cartItemUpdateDto) {
+        Cart cart = cartRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
+
+        Product product = productRepository.findById(cartItemUpdateDto.getProductId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        CartItem existingCartItem = cartItemRepository.findByCartAndProduct(cart, product)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_IN_CART));
+
+        return cart.updateCartItem(existingCartItem,cartItemUpdateDto.getQuantity());
+    }
+
+    private static CartItem addOrUpdateCartItem(CartItemAddRequestDto cartItemAddRequestDto, Optional<CartItem> existingCartItem, Product product, Cart cart) {
         CartItem finalCartItem;
         if (existingCartItem.isPresent()) {
             finalCartItem = existingCartItem.get();
-            finalCartItem.addQuantity(cartAddRequestDto.getQuantity());
+            finalCartItem.addQuantity(cartItemAddRequestDto.getQuantity());
         } else {
             finalCartItem = CartItem.builder()
                     .product(product)
-                    .quantity(cartAddRequestDto.getQuantity())
+                    .quantity(cartItemAddRequestDto.getQuantity())
                     .build();
 
             cart.addCartItem(finalCartItem);

@@ -2,8 +2,9 @@ package com.market.marketplacebackend.cart.controller;
 
 import com.market.marketplacebackend.cart.domain.Cart;
 import com.market.marketplacebackend.cart.domain.CartItem;
-import com.market.marketplacebackend.cart.dto.CartAddRequestDto;
+import com.market.marketplacebackend.cart.dto.CartItemAddRequestDto;
 import com.market.marketplacebackend.cart.dto.CartItemResponseDto;
+import com.market.marketplacebackend.cart.dto.CartItemUpdateDto;
 import com.market.marketplacebackend.cart.dto.CartResponseDto;
 import com.market.marketplacebackend.cart.service.CartService;
 import com.market.marketplacebackend.common.ServiceResult;
@@ -27,14 +28,32 @@ public class CartController {
     }
 
     @PostMapping("/items/{accountId}")
-    public ResponseEntity<ServiceResult<CartItemResponseDto>> addItemToCart(@Valid @RequestBody CartAddRequestDto cartAddRequestDto,
+    public ResponseEntity<ServiceResult<CartItemResponseDto>> addItemToCart(@Valid @RequestBody CartItemAddRequestDto cartItemAddRequestDto,
                                                                             @PathVariable Long accountId
     ){
-        CartItem serviceResult = cartService.addItemToCart(accountId, cartAddRequestDto);
+        CartItem serviceResult = cartService.addItemToCart(accountId, cartItemAddRequestDto);
 
         CartItemResponseDto cartItemResponseDto = CartItemResponseDto.fromEntity(serviceResult);
         ServiceResult<CartItemResponseDto> finalResult = ServiceResult.success("장바구니에 상품 추가 완료", cartItemResponseDto);
 
         return ResponseEntity.ok(finalResult);
     }
+
+    @PatchMapping("/items/{accountId}")
+    public ResponseEntity<ServiceResult<CartItemResponseDto>> updateItem(@Valid @RequestBody CartItemUpdateDto cartItemUpdateDto,
+                                                                         @PathVariable Long accountId
+    ){
+        CartItem serviceResult = cartService.updateItem(accountId, cartItemUpdateDto);
+
+        if (serviceResult == null) {
+            return ResponseEntity.ok(ServiceResult.success("장바구니에서 상품이 삭제되었습니다.", null));
+        }
+
+        CartItemResponseDto cartItemResponseDto = CartItemResponseDto.fromEntity(serviceResult);
+        ServiceResult<CartItemResponseDto> finalResult = ServiceResult.success("장바구니에 상품 수정 완료", cartItemResponseDto);
+
+        return ResponseEntity.ok(finalResult);
+    }
+    //상품 개별 삭제
+    //상품 전체 삭제
 }

@@ -35,4 +35,13 @@ public class Cart {
         this.cartItems.add(cartItem);
         cartItem.setCart(this);
     }
+
+    public CartItem updateCartItem(CartItem cartItem, int quantity){
+        cartItem.updateQuantity(quantity);
+        if(cartItem.getQuantity() < 1){
+            cartItems.remove(cartItem);
+            return null;
+        }
+        return cartItem;
+    }
 }
