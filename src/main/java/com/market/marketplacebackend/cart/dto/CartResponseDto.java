@@ -1,14 +1,18 @@
 package com.market.marketplacebackend.cart.dto;
 
 import com.market.marketplacebackend.cart.domain.Cart;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CartResponseDto {
     private List<CartItemResponseDto> items;
     private int totalPrice;

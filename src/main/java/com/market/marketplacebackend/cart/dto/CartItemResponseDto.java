@@ -2,11 +2,15 @@ package com.market.marketplacebackend.cart.dto;
 
 import com.market.marketplacebackend.cart.domain.CartItem;
 import com.market.marketplacebackend.product.domain.Product;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CartItemResponseDto {
     private Long productId;
     private String productName;
