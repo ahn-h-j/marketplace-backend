@@ -48,7 +48,7 @@ public class CartItem {
         return Objects.hash(getId());
     }
 
-    public void setCart(Cart cart) {
+    void setCart(Cart cart) {
         this.cart = cart;
     }
 
