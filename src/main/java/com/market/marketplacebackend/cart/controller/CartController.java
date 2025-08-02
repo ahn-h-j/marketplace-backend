@@ -2,10 +2,7 @@ package com.market.marketplacebackend.cart.controller;
 
 import com.market.marketplacebackend.cart.domain.Cart;
 import com.market.marketplacebackend.cart.domain.CartItem;
-import com.market.marketplacebackend.cart.dto.CartItemAddRequestDto;
-import com.market.marketplacebackend.cart.dto.CartItemResponseDto;
-import com.market.marketplacebackend.cart.dto.CartItemUpdateDto;
-import com.market.marketplacebackend.cart.dto.CartResponseDto;
+import com.market.marketplacebackend.cart.dto.*;
 import com.market.marketplacebackend.cart.service.CartService;
 import com.market.marketplacebackend.common.ServiceResult;
 import jakarta.validation.Valid;
@@ -54,6 +51,13 @@ public class CartController {
 
         return ResponseEntity.ok(finalResult);
     }
-    //상품 개별 삭제
+
+    @DeleteMapping("/items/{accountId}/{productId}")
+    public ResponseEntity<Void> deleteItem(@PathVariable Long productId, @PathVariable Long accountId
+    ){
+        cartService.deleteItem(accountId, productId);
+
+        return ResponseEntity.noContent().build();
+    }
     //상품 전체 삭제
 }

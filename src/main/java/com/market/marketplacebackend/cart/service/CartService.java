@@ -61,6 +61,20 @@ public class CartService {
         return cart.updateCartItem(existingCartItem,cartItemUpdateDto.getQuantity());
     }
 
+    @Transactional
+    public void deleteItem(Long accountId, Long productId) {
+        Cart cart = cartRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        CartItem existingCartItem = cartItemRepository.findByCartAndProduct(cart, product)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_IN_CART));
+
+        cart.deleteCartItem(existingCartItem);
+    }
+
     private static CartItem addOrUpdateCartItem(CartItemAddRequestDto cartItemAddRequestDto, Optional<CartItem> existingCartItem, Product product, Cart cart) {
         CartItem finalCartItem;
         if (existingCartItem.isPresent()) {
@@ -76,4 +90,6 @@ public class CartService {
         }
         return finalCartItem;
     }
+
+
 }

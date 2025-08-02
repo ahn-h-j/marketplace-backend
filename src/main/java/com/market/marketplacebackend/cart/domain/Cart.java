@@ -44,4 +44,8 @@ public class Cart {
         }
         return cartItem;
     }
+
+    public void deleteCartItem(CartItem cartItem){
+        cartItems.remove(cartItem);
+    }
 }
