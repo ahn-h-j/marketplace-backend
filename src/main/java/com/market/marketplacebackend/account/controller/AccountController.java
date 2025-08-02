@@ -1,5 +1,6 @@
 package com.market.marketplacebackend.account.controller;
 
+import com.market.marketplacebackend.account.dto.AccountResponseDto;
 import com.market.marketplacebackend.common.ServiceResult;
 import com.market.marketplacebackend.account.domain.Account;
 import com.market.marketplacebackend.account.dto.LoginDto;
@@ -21,14 +22,22 @@ public class AccountController {
     private final AccountService accountService;
 
     @PostMapping("/signup")
-    public ResponseEntity<ServiceResult<Account>> signUp(@Valid @RequestBody SignUpDto signUpDto){
-        ServiceResult<Account> result = accountService.join(signUpDto);
-        return ResponseEntity.ok(result);
+    public ResponseEntity<ServiceResult<AccountResponseDto>> signUp(@Valid @RequestBody SignUpDto signUpDto){
+        Account serviceResult = accountService.join(signUpDto);
+
+        AccountResponseDto accountResponseDto = AccountResponseDto.fromEntity(serviceResult);
+        ServiceResult<AccountResponseDto> finalResult = ServiceResult.success("회원가입 성공", accountResponseDto);
+
+        return ResponseEntity.ok(finalResult);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ServiceResult<Account>> login(@Valid @RequestBody LoginDto loginDto){
-        ServiceResult<Account> result = accountService.login(loginDto);
-        return ResponseEntity.ok(result);
+    public ResponseEntity<ServiceResult<AccountResponseDto>> login(@Valid @RequestBody LoginDto loginDto){
+        Account serviceResult = accountService.login(loginDto);
+
+        AccountResponseDto accountResponseDto = AccountResponseDto.fromEntity(serviceResult);
+        ServiceResult<AccountResponseDto> finalResult = ServiceResult.success("로그인 성공", accountResponseDto);
+
+        return ResponseEntity.ok(finalResult);
     }
 }

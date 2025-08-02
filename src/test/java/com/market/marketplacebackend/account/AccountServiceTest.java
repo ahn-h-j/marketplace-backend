@@ -1,9 +1,8 @@
 package com.market.marketplacebackend.account;
 
-// Removed unused import for UserController
+import com.market.marketplacebackend.cart.service.CartService;
 import com.market.marketplacebackend.common.exception.BusinessException;
 import com.market.marketplacebackend.common.exception.ErrorCode;
-import com.market.marketplacebackend.common.ServiceResult;
 import com.market.marketplacebackend.account.domain.Account;
 import com.market.marketplacebackend.account.dto.LoginDto;
 import com.market.marketplacebackend.account.dto.SignUpDto;
@@ -23,8 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class AccountServiceTest {
@@ -36,6 +34,9 @@ public class AccountServiceTest {
 
     @Mock
     private HttpSession httpSession;
+
+    @Mock
+    private CartService cartService;
 
     @Test
     @DisplayName("회원가입 성공(서비스)")
@@ -58,14 +59,16 @@ public class AccountServiceTest {
 
         when(accountRepository.save(any(Account.class)))
                 .thenReturn(account);
+        doNothing().when(cartService).createCartForAccount(any(Account.class));
+
         //when
-        ServiceResult<Account> result = accountService.join(signUpDto);
+        Account result = accountService.join(signUpDto);
 
         //then
-        assertThat(result.getData().getEmail()).isEqualTo(signUpDto.getEmail());
-        assertThat(result.getData().getName()).isEqualTo(signUpDto.getName());
-        assertThat(result.getData().getPassword()).isEqualTo(signUpDto.getPassword());
-        assertThat(result.getData().getPhoneNumber()).isEqualTo(signUpDto.getPhoneNumber());
+        assertThat(result.getEmail()).isEqualTo(signUpDto.getEmail());
+        assertThat(result.getName()).isEqualTo(signUpDto.getName());
+        assertThat(result.getPassword()).isEqualTo(signUpDto.getPassword());
+        assertThat(result.getPhoneNumber()).isEqualTo(signUpDto.getPhoneNumber());
         verify(accountRepository).existsByEmail("test@example.com");
         verify(accountRepository).save(any(Account.class));
     }
@@ -107,11 +110,11 @@ public class AccountServiceTest {
         when(accountRepository.findByEmail("test@example.com")).thenReturn(Optional.ofNullable(account));
 
         //when
-        ServiceResult<Account> loginCustomer = accountService.login(loginDto);
+        Account loginCustomer = accountService.login(loginDto);
 
         //then
-        assertThat(loginCustomer.getData().getEmail()).isEqualTo(loginDto.getEmail());
-        assertThat(loginCustomer.getData().getPassword()).isEqualTo(loginDto.getPassword());
+        assertThat(loginCustomer.getEmail()).isEqualTo(loginDto.getEmail());
+        assertThat(loginCustomer.getPassword()).isEqualTo(loginDto.getPassword());
         verify(accountRepository).findByEmail("test@example.com");
         verify(httpSession).setAttribute("UserId", 1L);
     }
