@@ -53,11 +53,16 @@ public class CartController {
     }
 
     @DeleteMapping("/items/{accountId}/{productId}")
-    public ResponseEntity<Void> deleteItem(@PathVariable Long productId, @PathVariable Long accountId
-    ){
+    public ResponseEntity<Void> deleteItem(@PathVariable Long productId, @PathVariable Long accountId){
         cartService.deleteItem(accountId, productId);
 
         return ResponseEntity.noContent().build();
     }
-    //상품 전체 삭제
+
+    @DeleteMapping("/items/{accountId}")
+    public ResponseEntity<Void> deleteAllCartItems(@PathVariable Long accountId){
+        cartService.deleteAllCartItems(accountId);
+
+        return ResponseEntity.noContent().build();
+    }
 }

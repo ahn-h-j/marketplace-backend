@@ -74,6 +74,12 @@ public class CartService {
 
         cart.deleteCartItem(existingCartItem);
     }
+    public void deleteAllCartItems(Long accountId) {
+        Cart cart = cartRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
+
+        cart.deleteAllCartItems();
+    }
 
     private static CartItem addOrUpdateCartItem(CartItemAddRequestDto cartItemAddRequestDto, Optional<CartItem> existingCartItem, Product product, Cart cart) {
         CartItem finalCartItem;
@@ -90,6 +96,7 @@ public class CartService {
         }
         return finalCartItem;
     }
+
 
 
 }

@@ -48,4 +48,8 @@ public class Cart {
     public void deleteCartItem(CartItem cartItem){
         cartItems.remove(cartItem);
     }
+
+    public void deleteAllCartItems() {
+        cartItems.clear();
+    }
 }
