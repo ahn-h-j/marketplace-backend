@@ -2,11 +2,15 @@ package com.market.marketplacebackend.product.dto;
 
 import com.market.marketplacebackend.common.enums.Category;
 import com.market.marketplacebackend.product.domain.Product;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ProductDetailResponseDto {
     private Long id;
     private String name;
