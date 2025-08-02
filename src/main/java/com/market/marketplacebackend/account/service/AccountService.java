@@ -1,10 +1,8 @@
 package com.market.marketplacebackend.account.service;
 
-import com.market.marketplacebackend.cart.domain.Cart;
-import com.market.marketplacebackend.cart.repository.CartRepository;
+import com.market.marketplacebackend.cart.service.CartService;
 import com.market.marketplacebackend.common.exception.BusinessException;
 import com.market.marketplacebackend.common.exception.ErrorCode;
-import com.market.marketplacebackend.common.ServiceResult;
 import com.market.marketplacebackend.account.domain.Account;
 import com.market.marketplacebackend.account.dto.LoginDto;
 import com.market.marketplacebackend.account.dto.SignUpDto;
@@ -19,21 +17,21 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final HttpSession httpSession;
-    private final CartRepository cartRepository;
+    private final CartService cartService;
 
-    public ServiceResult<Account> join(SignUpDto signUpDto) {
+    public Account join(SignUpDto signUpDto) {
         if(accountRepository.existsByEmail(signUpDto.getEmail())){
             throw new BusinessException(ErrorCode.EMAIL_DUPLICATE);
         }
 
         Account account = signUpDto.toEntity();
         Account savedAccount = accountRepository.save(account);
-        cartRepository.save(new Cart(account));
+        cartService.createCartForAccount(savedAccount);
 
-        return ServiceResult.success("회원 가입 성공", savedAccount);
+        return savedAccount;
     }
 
-    public ServiceResult<Account> login(LoginDto loginDto) {
+    public Account login(LoginDto loginDto) {
         Account account = accountRepository.findByEmail(loginDto.getEmail())
                 .orElseThrow(() -> new BusinessException(ErrorCode.EMAIL_NOT_FOUND));
 
@@ -43,7 +41,7 @@ public class AccountService {
 
         httpSession.setAttribute("UserId", account.getId());
 
-        return ServiceResult.success("로그인 성공", account);
+        return account;
     }
 
 }

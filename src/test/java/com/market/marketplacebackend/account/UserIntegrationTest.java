@@ -2,6 +2,7 @@ package com.market.marketplacebackend.account;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.market.marketplacebackend.common.enums.AccountRole;
 import com.market.marketplacebackend.common.exception.ErrorCode;
 import com.market.marketplacebackend.common.ServiceResult;
 import com.market.marketplacebackend.account.domain.Account;
@@ -45,6 +46,7 @@ public class UserIntegrationTest {
                 .email("test@example.com")
                 .password("password123")
                 .phoneNumber("010-1234-5678")
+                .accountRole(AccountRole.CUSTOMER)
                 .build();
 
         mockMvc.perform(post("/user/signup")
@@ -52,7 +54,7 @@ public class UserIntegrationTest {
                 .content(objectMapper.writeValueAsString(signUpDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("회원 가입 성공"));
+                .andExpect(jsonPath("$.message").value("회원가입 성공"));
 
         Optional<Account> customer = accountRepository.findByEmail("test@example.com");
         assertThat(customer).isPresent();

@@ -1,7 +1,6 @@
 package com.market.marketplacebackend.account;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.market.marketplacebackend.common.ServiceResult;
 import com.market.marketplacebackend.account.controller.AccountController;
 import com.market.marketplacebackend.account.domain.Account;
 import com.market.marketplacebackend.account.dto.LoginDto;
@@ -55,9 +54,7 @@ class AccountControllerTest {
 
         Account account = signUpDto.toEntity();
 
-        ServiceResult<Account> result = ServiceResult.success("회원가입 성공", account);
-
-        when(accountService.join(any(SignUpDto.class))).thenReturn(result);
+        when(accountService.join(any(SignUpDto.class))).thenReturn(account);
 
         // when & then
         mockMvc.perform(post("/user/signup")
@@ -104,9 +101,7 @@ class AccountControllerTest {
                 .email("test@example.com")
                 .build();
 
-        ServiceResult<Account> result = ServiceResult.success("로그인 성공", account);
-
-        when(accountService.login(any(LoginDto.class))).thenReturn(result);
+        when(accountService.login(any(LoginDto.class))).thenReturn(account);
 
         //when & then
         MvcResult mvcResult = mockMvc.perform(post("/user/login")

@@ -1,5 +1,6 @@
 package com.market.marketplacebackend.cart.service;
 
+import com.market.marketplacebackend.account.domain.Account;
 import com.market.marketplacebackend.cart.domain.Cart;
 import com.market.marketplacebackend.cart.domain.CartItem;
 import com.market.marketplacebackend.cart.dto.CartItemAddRequestDto;
@@ -23,6 +24,11 @@ public class CartService {
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
     private final CartItemRepository cartItemRepository;
+
+    @Transactional
+    public void createCartForAccount(Account savedAccount) {
+        cartRepository.save(new Cart(savedAccount));
+    }
 
     @Transactional(readOnly = true)
     public Cart getCart(Long accountId) {
