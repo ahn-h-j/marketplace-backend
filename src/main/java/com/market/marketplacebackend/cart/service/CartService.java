@@ -74,6 +74,8 @@ public class CartService {
 
         cart.deleteCartItem(existingCartItem);
     }
+
+    @Transactional
     public void deleteAllCartItems(Long accountId) {
         Cart cart = cartRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
