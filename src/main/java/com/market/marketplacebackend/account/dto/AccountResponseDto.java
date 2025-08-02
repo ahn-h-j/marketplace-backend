@@ -15,7 +15,6 @@ public class AccountResponseDto {
     private String name;
     private String email;
     private String phoneNumber;
-    @Enumerated(EnumType.STRING)
     private AccountRole accountRole;
 
     public static AccountResponseDto fromEntity(Account account) {
