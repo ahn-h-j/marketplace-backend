@@ -2,7 +2,6 @@ package com.market.marketplacebackend.account.dto;
 
 import com.market.marketplacebackend.account.domain.Account;
 import com.market.marketplacebackend.common.enums.AccountRole;
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
