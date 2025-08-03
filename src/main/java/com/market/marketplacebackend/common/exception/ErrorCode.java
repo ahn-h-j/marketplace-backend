@@ -33,7 +33,8 @@ public enum ErrorCode {
 
     //장바구니 관련
     CART_NOT_FOUND(HttpStatus.NOT_FOUND, "CART_NOT_FOUND", "카트가 존재하지 않습니다."),
-    PRODUCT_NOT_IN_CART(HttpStatus.NOT_FOUND, "PRODUCT_NOT_IN_CART", "카트에 해당 상품이 존재하지 않습니다.");
+    PRODUCT_NOT_IN_CART(HttpStatus.NOT_FOUND, "PRODUCT_NOT_IN_CART", "카트에 해당 상품이 존재하지 않습니다."),
+    FORBIDDEN_CART(HttpStatus.NOT_FOUND, "FORBIDDEN_CART", "해당 카트에 대한 권한이 없습니다.");
 
     private final HttpStatus status;
     private final String code;

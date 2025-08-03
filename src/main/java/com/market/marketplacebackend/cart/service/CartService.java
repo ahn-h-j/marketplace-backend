@@ -55,30 +55,26 @@ public class CartService {
 
     @Transactional
     public CartItem updateItem(Long accountId, CartItemUpdateDto cartItemUpdateDto) {
-        Cart cart = cartRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
-
-        Product product = productRepository.findById(cartItemUpdateDto.getProductId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
-
-        CartItem existingCartItem = cartItemRepository.findByCartAndProduct(cart, product)
+        CartItem cartItem = cartItemRepository.findById(cartItemUpdateDto.getCartItemId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_IN_CART));
 
-        return cart.updateCartItem(existingCartItem,cartItemUpdateDto.getQuantity());
+        if (!cartItem.getCart().getAccount().getId().equals(accountId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN_CART); // 또는 적절한 권한 없음 에러
+        }
+
+        return cartItem.getCart().updateCartItem(cartItem,cartItemUpdateDto.getQuantity());
     }
 
     @Transactional
-    public void deleteItem(Long accountId, Long productId) {
-        Cart cart = cartRepository.findByAccountId(accountId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
-
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
-
-        CartItem existingCartItem = cartItemRepository.findByCartAndProduct(cart, product)
+    public void deleteItem(Long accountId, Long cartItemId) {
+        CartItem cartItem = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_IN_CART));
 
-        cart.deleteCartItem(existingCartItem);
+        if (!cartItem.getCart().getAccount().getId().equals(accountId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN_CART); // 또는 적절한 권한 없음 에러
+        }
+
+        cartItem.getCart().deleteCartItem(cartItem);
     }
 
     @Transactional

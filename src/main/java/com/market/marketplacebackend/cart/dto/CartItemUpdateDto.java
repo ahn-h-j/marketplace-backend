@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CartItemUpdateDto {
     @NotNull(message = "상품을 선택해 주세요")
-    private Long productId;
+    private Long cartItemId;
     @NotNull(message = "상품 수량을 선택해 주세요")
     @Min(0)
     private Integer quantity;
