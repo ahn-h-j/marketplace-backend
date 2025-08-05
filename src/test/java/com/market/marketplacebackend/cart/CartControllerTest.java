@@ -77,7 +77,7 @@ public class CartControllerTest {
                 .quantity(10)
                 .build();
 
-        cart.addCartItem(cartItem);
+        cart.addProduct(product, 10);
 
         //when
         when(cartService.getCart(eq(1L))).thenReturn(cart);

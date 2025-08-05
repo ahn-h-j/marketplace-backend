@@ -31,6 +31,13 @@ public class CartItem {
     @Column(nullable = false)
     private int quantity;
 
+    public static CartItem createCartItem(Product product, int quantity) {
+        return CartItem.builder()
+                .product(product)
+                .quantity(quantity)
+                .build();
+    }
+
     public void addQuantity(Integer quantity) {
         this.quantity += quantity;
     }

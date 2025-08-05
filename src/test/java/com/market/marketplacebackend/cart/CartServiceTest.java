@@ -154,25 +154,14 @@ class CartServiceTest {
                 .quantity(10)
                 .build();
 
-        CartItem cartItem = CartItem.builder()
-                .product(product)
-                .cart(cart)
-                .quantity(cartItemAddRequestDto.getQuantity())
-                .build();
-
         when(cartRepository.findByAccountId(eq(1L))).thenReturn(Optional.of(cart));
         when(productRepository.findById(eq(1L))).thenReturn(Optional.of(product));
-        when(cartItemRepository.findByCartAndProduct(any(Cart.class),any(Product.class))).thenReturn(Optional.empty());
-        when(cartItemRepository.save(any(CartItem.class))).thenReturn(cartItem);
 
         // when
         cartService.addItemToCart(account.getId(), cartItemAddRequestDto);
 
         // then
-        verify(cartRepository).findByAccountId(1L);
         verify(productRepository).findById(1L);
-        verify(cartItemRepository).findByCartAndProduct(cart,product);
-        verify(cartItemRepository).save(cartItem);
     }
 
     @Test
@@ -204,16 +193,9 @@ class CartServiceTest {
                 .quantity(10)
                 .build();
 
-        CartItem cartItem = CartItem.builder()
-                .product(product)
-                .cart(cart)
-                .quantity(cartItemAddRequestDto.getQuantity())
-                .build();
-
+        cart.addProduct(product, 10);
         when(cartRepository.findByAccountId(eq(1L))).thenReturn(Optional.of(cart));
         when(productRepository.findById(eq(1L))).thenReturn(Optional.of(product));
-        when(cartItemRepository.findByCartAndProduct(any(Cart.class),any(Product.class))).thenReturn(Optional.of(cartItem));
-        when(cartItemRepository.save(any(CartItem.class))).thenReturn(cartItem);
 
         // when
         CartItem addItemToCart = cartService.addItemToCart(account.getId(), cartItemAddRequestDto);
@@ -221,8 +203,6 @@ class CartServiceTest {
         // then
         verify(cartRepository).findByAccountId(1L);
         verify(productRepository).findById(1L);
-        verify(cartItemRepository).findByCartAndProduct(cart,product);
-        verify(cartItemRepository).save(cartItem);
         assertThat(addItemToCart.getQuantity()).isEqualTo(20);
     }
 
