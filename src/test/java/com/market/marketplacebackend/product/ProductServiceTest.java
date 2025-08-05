@@ -139,6 +139,7 @@ class ProductServiceTest {
                 .phoneNumber("010-1234-5678")
                 .accountRole(AccountRole.SELLER)
                 .build();
+
         ProductUpdateRequestDto productUpdateRequestDto = ProductUpdateRequestDto.builder()
                 .name("new Product")
                 .price(20000)
@@ -146,20 +147,20 @@ class ProductServiceTest {
                 .stock(100)
                 .category(Category.FASHION)
                 .build();
-        Product updatedProduct = Product.builder()
+        Product originalProduct = Product.builder()
                 .id(1L)
-                .name(productUpdateRequestDto.getName())
-                .price(productUpdateRequestDto.getPrice())
-                .description(productUpdateRequestDto.getDescription())
-                .stock(productUpdateRequestDto.getStock())
-                .category(productUpdateRequestDto.getCategory())
+                .name("old Product")
+                .price(10000)
+                .description("옛날 상품입니다")
+                .stock(50)
+                .category(Category.BOOKS)
                 .account(account)
                 .build();
 
-        when(productRepository.findById(eq(1L))).thenReturn(Optional.of(updatedProduct));
+        when(productRepository.findById(eq(1L))).thenReturn(Optional.of(originalProduct));
 
         // when
-        Product result = productService.updateProduct(account.getId(), updatedProduct.getId(), productUpdateRequestDto);
+        Product result = productService.updateProduct(account.getId(), originalProduct.getId(), productUpdateRequestDto);
 
         // then
         verify(productRepository).findById(1L);
