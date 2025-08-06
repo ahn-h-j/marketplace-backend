@@ -13,7 +13,6 @@ import com.market.marketplacebackend.order.repository.OrderRepository;
 import com.market.marketplacebackend.product.domain.Product;
 import com.market.marketplacebackend.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,7 +22,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -37,13 +35,10 @@ public class OrderService {
     public Order createOrder(Long accountId, OrderCreateRequestDto orderCreateRequestDto) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
-        log.info("account : {}", account);
         Map<Long, Integer> itemQuantities = orderCreateRequestDto.getOrderItems().stream()
                 .collect(Collectors.toMap(OrderItemDto::getCartItemId, OrderItemDto::getQuantity));
-        log.info("itemQuantities : {}", itemQuantities);
 
         List<CartItem> cartItems = cartItemRepository.findAllById(itemQuantities.keySet());
-        log.info("cartItems : {}", cartItems);
 
         if (cartItems.size() != itemQuantities.size()) {
             throw new BusinessException(ErrorCode.REQUESTED_CART_ITEMS_NOT_FOUND);
@@ -54,11 +49,9 @@ public class OrderService {
                 .map(cartItem -> cartItem.getProduct().getId())
                 .toList()
         );
-        log.info("products : {}", products);
 
         Map<Long, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, Function.identity()));
-        log.info("productMap : {}", productMap);
 
         for (CartItem cartItem : cartItems) {
             Product product = productMap.get(cartItem.getProduct().getId());
