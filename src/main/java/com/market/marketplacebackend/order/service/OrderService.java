@@ -1,0 +1,75 @@
+package com.market.marketplacebackend.order.service;
+
+import com.market.marketplacebackend.account.domain.Account;
+import com.market.marketplacebackend.account.repository.AccountRepository;
+import com.market.marketplacebackend.cart.domain.CartItem;
+import com.market.marketplacebackend.cart.repository.CartItemRepository;
+import com.market.marketplacebackend.common.exception.BusinessException;
+import com.market.marketplacebackend.common.exception.ErrorCode;
+import com.market.marketplacebackend.order.domain.Order;
+import com.market.marketplacebackend.order.dto.OrderCreateRequestDto;
+import com.market.marketplacebackend.order.dto.OrderItemDto;
+import com.market.marketplacebackend.order.repository.OrderRepository;
+import com.market.marketplacebackend.product.domain.Product;
+import com.market.marketplacebackend.product.repository.ProductRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class OrderService {
+
+    private final AccountRepository accountRepository;
+    private final OrderRepository orderRepository;
+    private final CartItemRepository cartItemRepository;
+    private final ProductRepository productRepository;
+
+    @Transactional
+    public Order createOrder(Long accountId, OrderCreateRequestDto orderCreateRequestDto) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
+        log.info("account : {}", account);
+        Map<Long, Integer> itemQuantities = orderCreateRequestDto.getOrderItems().stream()
+                .collect(Collectors.toMap(OrderItemDto::getCartItemId, OrderItemDto::getQuantity));
+        log.info("itemQuantities : {}", itemQuantities);
+
+        List<CartItem> cartItems = cartItemRepository.findAllById(itemQuantities.keySet());
+        log.info("cartItems : {}", cartItems);
+
+        if (cartItems.size() != itemQuantities.size()) {
+            throw new BusinessException(ErrorCode.REQUESTED_CART_ITEMS_NOT_FOUND);
+        }
+
+        List<Product> products = productRepository.findByIdIn(
+                cartItems.stream()
+                .map(cartItem -> cartItem.getProduct().getId())
+                .toList()
+        );
+        log.info("products : {}", products);
+
+        Map<Long, Product> productMap = products.stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
+        log.info("productMap : {}", productMap);
+
+        for (CartItem cartItem : cartItems) {
+            Product product = productMap.get(cartItem.getProduct().getId());
+            int quantity = itemQuantities.get(cartItem.getId());
+            product.decreaseStock(quantity);
+        }
+
+        LocalDateTime expirationTime = LocalDateTime.now().plusMinutes(15);
+
+
+        Order order = Order.create(account, cartItems, itemQuantities, expirationTime);
+        return orderRepository.save(order);
+    }
+}

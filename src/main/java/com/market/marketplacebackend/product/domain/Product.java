@@ -2,6 +2,8 @@ package com.market.marketplacebackend.product.domain;
 
 import com.market.marketplacebackend.account.domain.Account;
 import com.market.marketplacebackend.common.enums.Category;
+import com.market.marketplacebackend.common.exception.BusinessException;
+import com.market.marketplacebackend.common.exception.ErrorCode;
 import com.market.marketplacebackend.product.dto.ProductUpdateRequestDto;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -44,5 +46,17 @@ public class Product {
         if (dto.getCategory() != null && !this.category.equals(dto.getCategory())) {
             this.category = dto.getCategory();
         }
+    }
+
+    public void decreaseStock(int quantity) {
+        int remainStock = this.stock - quantity;
+        if(remainStock < 0){
+            throw new BusinessException(ErrorCode.NOT_ENOUGH_STOCK);
+        }
+        this.stock = remainStock;
+    }
+
+    public void increaseStock(int quantity) {
+        this.stock += quantity;
     }
 }
