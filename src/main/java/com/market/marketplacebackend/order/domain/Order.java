@@ -34,7 +34,8 @@ public class Order {
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
 
-    private Integer totalPrice;
+    @Builder.Default
+    private Integer totalPrice = 0;
 
     private LocalDateTime expiresAt;
 
