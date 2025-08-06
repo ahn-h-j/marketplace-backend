@@ -38,7 +38,7 @@ public class OrderService {
         Map<Long, Integer> itemQuantities = orderCreateRequestDto.getOrderItems().stream()
                 .collect(Collectors.toMap(OrderItemDto::getCartItemId, OrderItemDto::getQuantity));
 
-        List<CartItem> cartItems = cartItemRepository.findAllById(itemQuantities.keySet());
+        List<CartItem> cartItems = cartItemRepository.findAllByIdWithProduct(itemQuantities.keySet());
 
         if (cartItems.size() != itemQuantities.size()) {
             throw new BusinessException(ErrorCode.REQUESTED_CART_ITEMS_NOT_FOUND);
