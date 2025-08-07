@@ -10,9 +10,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -23,20 +23,25 @@ public class OrderScheduler {
     private final OrderCancellationService orderCancellationService;
 
     @Scheduled(fixedDelay = 60000)
-    @Transactional
-    public void cleanupExpiredOrders(){
+    public void cleanupExpiredOrders() {
         Pageable pageable = PageRequest.of(0, BATCH_SIZE);
-        Page<Order> expiredOrdersPage;
-        do{
-            expiredOrdersPage = orderRepository.findExpiredOrdersWithDetails(OrderStatus.PENDING, LocalDateTime.now(), pageable);
+        Page<Long> orderPages;
+        do {
+            orderPages = orderRepository.findExpiredOrderIds(OrderStatus.PENDING, LocalDateTime.now(), pageable);
 
-            if(!expiredOrdersPage.hasContent()){
+            List<Long> orderIds = orderPages.getContent();
+
+            if (!orderPages.hasContent()) {
                 break;
             }
-            for (Order expiredOrder : expiredOrdersPage.getContent()) {
-               orderCancellationService.cancelOrder(expiredOrder);
+
+            List<Order> expiredOrders = orderRepository.findWithDetailsByIds(orderIds);
+
+            for (Order expiredOrder : expiredOrders) {
+                orderCancellationService.cancelOrder(expiredOrder);
             }
-            pageable = expiredOrdersPage.nextPageable();
-        }while (expiredOrdersPage.hasNext());
+            pageable = orderPages.nextPageable();
+
+        } while (orderPages.hasNext());
     }
 }
