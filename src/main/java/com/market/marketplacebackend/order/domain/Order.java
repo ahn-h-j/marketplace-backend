@@ -73,6 +73,21 @@ public class Order {
         return Collections.unmodifiableList(this.orderItems);
     }
 
+    public String getRepresentativeProductNameAndCount() {
+        if (orderItems == null || orderItems.isEmpty()) {
+            return "주문 상품 없음";
+        }
+
+        String firstProductName = orderItems.get(0).getCartItem().getProduct().getName();
+        int remainingCount = orderItems.size() - 1;
+
+        if (remainingCount > 0) {
+            return firstProductName + " 외 " + remainingCount + "건";
+        } else {
+            return firstProductName;
+        }
+    }
+
     public void cancel() {
         if(!CANCELABLE_STATUSES.contains(this.orderStatus)){
             throw new BusinessException(ErrorCode.INVALID_STATE_TRANSITION);

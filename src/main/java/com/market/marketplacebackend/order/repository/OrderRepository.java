@@ -12,8 +12,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    List<Order> findByOrderStatusAndExpiresAtBefore(OrderStatus orderStatus, LocalDateTime now);
-
     @Query(value = "SELECT o FROM Order o " +
             "JOIN FETCH o.orderItems oi " +
             "JOIN FETCH oi.cartItem ci " +
@@ -21,4 +19,13 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "WHERE o.orderStatus = :orderStatus AND o.expiresAt < :now",
             countQuery = "SELECT count(o) FROM Order o WHERE o.orderStatus = :orderStatus AND o.expiresAt < :now")
     Page<Order> findExpiredOrdersWithDetails(@Param("orderStatus") OrderStatus orderStatus, @Param("now") LocalDateTime now, Pageable pageable);
+
+    Page<Order> findByAccountId(Long accountId, Pageable pageable);
+
+    @Query("SELECT DISTINCT o FROM Order o " +
+            "JOIN FETCH o.orderItems oi " +
+            "JOIN FETCH oi.cartItem ci " +
+            "JOIN FETCH ci.product p " +
+            "WHERE o.id IN :orderIds")
+    List<Order> findWithDetailsByIds(List<Long> orderIds);
 }

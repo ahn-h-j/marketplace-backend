@@ -14,6 +14,9 @@ import com.market.marketplacebackend.order.repository.OrderRepository;
 import com.market.marketplacebackend.product.domain.Product;
 import com.market.marketplacebackend.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -89,5 +92,28 @@ public class OrderService {
             default -> throw new BusinessException(ErrorCode.INVALID_STATE_TRANSITION);
         }
         return order;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Order> findAllOrder(Long accountId, Pageable pageable) {
+        Page<Order> orderPage = orderRepository.findByAccountId(accountId, pageable);
+        List<Order> pageList = orderPage.getContent();
+
+        if (pageList.isEmpty()) {
+            return orderPage;
+        }
+        List<Long> orderIds = pageList.stream()
+                .map(Order::getId)
+                .toList();
+
+        List<Order> fetchedOrders = orderRepository.findWithDetailsByIds(orderIds);
+
+        Map<Long, Order> tempSortMap = fetchedOrders.stream()
+                .collect(Collectors.toMap(Order::getId, Function.identity()));
+
+        List<Order> finalContent = pageList.stream()
+                .map(order -> tempSortMap.get(order.getId()))
+                .toList();
+        return new PageImpl<>(finalContent , orderPage.getPageable(), orderPage.getTotalElements());
     }
 }
