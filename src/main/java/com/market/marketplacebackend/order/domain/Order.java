@@ -3,14 +3,14 @@ package com.market.marketplacebackend.order.domain;
 import com.market.marketplacebackend.account.domain.Account;
 import com.market.marketplacebackend.cart.domain.CartItem;
 import com.market.marketplacebackend.common.enums.OrderStatus;
+import com.market.marketplacebackend.common.exception.BusinessException;
+import com.market.marketplacebackend.common.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 @Entity
 @Getter
 @Builder
@@ -38,6 +38,12 @@ public class Order {
     private Integer totalPrice = 0;
 
     private LocalDateTime expiresAt;
+
+    private static final Set<OrderStatus> CANCELABLE_STATUSES = Set.of(
+            OrderStatus.PENDING,
+            OrderStatus.CONFIRMED,
+            OrderStatus.PROCESSING
+    );
 
     public static Order create(Account account, List<CartItem> cartItems, Map<Long, Integer> itemQuantities, LocalDateTime expiresAt) {
         Order order = Order.builder()
@@ -68,6 +74,37 @@ public class Order {
     }
 
     public void cancel() {
+        if(!CANCELABLE_STATUSES.contains(this.orderStatus)){
+            throw new BusinessException(ErrorCode.INVALID_STATE_TRANSITION);
+        }
         this.orderStatus = OrderStatus.CANCELED;
+    }
+
+    public void confirm() {
+        if(!this.orderStatus.equals(OrderStatus.PENDING)){
+            throw new BusinessException(ErrorCode.INVALID_STATE_TRANSITION);
+        }
+        this.orderStatus = OrderStatus.CONFIRMED;
+    }
+
+    public void process() {
+        if(!this.orderStatus.equals(OrderStatus.CONFIRMED)){
+            throw new BusinessException(ErrorCode.INVALID_STATE_TRANSITION);
+        }
+        this.orderStatus = OrderStatus.PROCESSING;
+    }
+
+    public void ship() {
+        if(!this.orderStatus.equals(OrderStatus.PROCESSING)){
+            throw new BusinessException(ErrorCode.INVALID_STATE_TRANSITION);
+        }
+        this.orderStatus = OrderStatus.SHIPPED;
+    }
+
+    public void deliver() {
+        if(!this.orderStatus.equals(OrderStatus.SHIPPED)){
+            throw new BusinessException(ErrorCode.INVALID_STATE_TRANSITION);
+        }
+        this.orderStatus = OrderStatus.DELIVERED;
     }
 }

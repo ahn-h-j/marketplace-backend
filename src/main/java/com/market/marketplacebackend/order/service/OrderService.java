@@ -9,6 +9,7 @@ import com.market.marketplacebackend.common.exception.ErrorCode;
 import com.market.marketplacebackend.order.domain.Order;
 import com.market.marketplacebackend.order.dto.OrderCreateRequestDto;
 import com.market.marketplacebackend.order.dto.OrderItemDto;
+import com.market.marketplacebackend.order.dto.OrderStatusUpdateRequestDto;
 import com.market.marketplacebackend.order.repository.OrderRepository;
 import com.market.marketplacebackend.product.domain.Product;
 import com.market.marketplacebackend.product.repository.ProductRepository;
@@ -30,6 +31,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
+    private final OrderCancellationService orderCancellationService;
 
     @Transactional
     public Order createOrder(Long accountId, OrderCreateRequestDto orderCreateRequestDto) {
@@ -64,5 +66,28 @@ public class OrderService {
 
         Order order = Order.create(account, cartItems, itemQuantities, expirationTime);
         return orderRepository.save(order);
+    }
+
+    @Transactional
+    public Order changeOrderStatus(Long accountId, Long orderId, OrderStatusUpdateRequestDto orderStatusUpdateRequestDto) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+        if(!order.getAccount().getId().equals(account.getId())){
+            throw new BusinessException(ErrorCode.FORBIDDEN_ORDER);
+        }
+
+        switch (orderStatusUpdateRequestDto.getNewStatus()){
+            case CONFIRMED -> order.confirm();
+            case PROCESSING -> order.process();
+            case SHIPPED -> order.ship();
+            case DELIVERED -> order.deliver();
+            case CANCELED -> orderCancellationService.cancelOrder(order);
+            default -> throw new BusinessException(ErrorCode.INVALID_STATE_TRANSITION);
+        }
+        return order;
     }
 }
