@@ -117,6 +117,7 @@ public class OrderService {
         return new PageImpl<>(finalContent , orderPage.getPageable(), orderPage.getTotalElements());
     }
 
+    @Transactional(readOnly = true)
     public Order findOrder(Long accountId, Long orderId) {
        Order order =  orderRepository.findWithDetailsById(orderId)
                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
