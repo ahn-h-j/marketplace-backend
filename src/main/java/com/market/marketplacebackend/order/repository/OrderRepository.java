@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
     Page<Order> findByAccountId(Long accountId, Pageable pageable);
@@ -22,4 +23,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "JOIN FETCH ci.product p " +
             "WHERE o.id IN :orderIds")
     List<Order> findWithDetailsByIds(List<Long> orderIds);
+
+    @Query("SELECT o FROM Order o " +
+            "JOIN FETCH o.orderItems oi " +
+            "JOIN FETCH oi.cartItem ci " +
+            "JOIN FETCH ci.product p " +
+            "JOIN FETCH o.account a " +
+            "WHERE o.id = :orderId")
+    Optional<Order> findWithDetailsById(Long orderId);
 }

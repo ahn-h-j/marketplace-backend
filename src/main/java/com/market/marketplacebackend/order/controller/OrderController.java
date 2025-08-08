@@ -64,5 +64,16 @@ public class OrderController {
         return ResponseEntity.ok(finalResult);
     }
 
-    //내 주문 목록 조회, 주문 상세 조회
+    @GetMapping("/{accountId}/{orderId}")
+    public ResponseEntity<ServiceResult<OrderResponseDto>> findOrder(@PathVariable Long accountId,
+                                                                        @PathVariable Long orderId
+    ){
+        Order serviceResult = orderService.findOrder(accountId,orderId);
+
+        OrderResponseDto orderResponseDto = OrderResponseDto.fromEntity(serviceResult);
+
+        ServiceResult<OrderResponseDto> finalResult = ServiceResult.success("주문 상세 조회 완료", orderResponseDto);
+
+        return ResponseEntity.ok(finalResult);
+    }
 }

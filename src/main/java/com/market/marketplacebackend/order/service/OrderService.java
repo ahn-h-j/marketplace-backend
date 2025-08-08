@@ -116,4 +116,13 @@ public class OrderService {
                 .toList();
         return new PageImpl<>(finalContent , orderPage.getPageable(), orderPage.getTotalElements());
     }
+
+    public Order findOrder(Long accountId, Long orderId) {
+       Order order =  orderRepository.findWithDetailsById(orderId)
+               .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+       if(!order.getAccount().getId().equals(accountId)){
+           throw new BusinessException(ErrorCode.FORBIDDEN_ORDER);
+       }
+       return order;
+    }
 }
