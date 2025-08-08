@@ -65,7 +65,7 @@ class CartIntegrationTest {
         productRepository.save(product);
         Cart cart = createCart(account);
         CartItem cartItem = createCartItem(product,cart,10);
-        cart.addCartItem(cartItem);
+        cart.addProduct(product, 10);
         cartRepository.save(cart);
         //then
         mockMvc.perform(get("/cart/{accountId}", account.getId())
@@ -152,8 +152,7 @@ class CartIntegrationTest {
         Product product = createProduct( account);
         productRepository.save(product);
         Cart cart = createCart(account);
-        CartItem cartItem = createCartItem(product,cart,10);
-        cart.addCartItem(cartItem);
+        CartItem cartItem = cart.addProduct(product, 10);
         cartRepository.save(cart);
         CartItemUpdateDto cartItemUpdateDto = createCartItemUpdateDto(cartItem.getId(), 5);
 
@@ -198,8 +197,7 @@ class CartIntegrationTest {
         Product product = createProduct( account);
         productRepository.save(product);
         Cart cart = createCart(account);
-        CartItem cartItem = createCartItem(product,cart,10);
-        cart.addCartItem(cartItem);
+        CartItem cartItem = cart.addProduct(product,10);
         cartRepository.save(cart);
         // then
         mockMvc.perform(delete("/cart/items/{accountId}/{cartItemId}", account.getId(),cartItem.getId())
@@ -210,7 +208,6 @@ class CartIntegrationTest {
         entityManager.clear();
         Optional<CartItem> deletedItem = cartItemRepository.findById(cartItem.getId());
         assertThat(deletedItem).isEmpty();
-
     }
 
     @Test
@@ -222,8 +219,7 @@ class CartIntegrationTest {
         Product product = createProduct( account);
         productRepository.save(product);
         Cart cart = createCart(account);
-        CartItem cartItem = createCartItem(product,cart,10);
-        cart.addCartItem(cartItem);
+        CartItem cartItem = cart.addProduct(product,10);
         cartRepository.save(cart);
         // then
         mockMvc.perform(delete("/cart/items/{accountId}", account.getId())

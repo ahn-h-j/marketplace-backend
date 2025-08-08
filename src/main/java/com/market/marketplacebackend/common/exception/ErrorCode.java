@@ -30,11 +30,18 @@ public enum ErrorCode {
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT_NOT_FOUND", "존재하지 않는 상품입니다."),
     FORBIDDEN_PRODUCT(HttpStatus.FORBIDDEN, "FORBIDDEN_PRODUCT", "해당 상품에 대한 권한이 없습니다."),
     CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CATEGORY_NOT_FOUND", "존재하지 않는 카테고리입니다."),
+    NOT_ENOUGH_STOCK(HttpStatus.CONFLICT, "NOT_ENOUGH_STOCK", "재고는 0개 미만이 될 수 없습니다."),
 
     //장바구니 관련
     CART_NOT_FOUND(HttpStatus.NOT_FOUND, "CART_NOT_FOUND", "카트가 존재하지 않습니다."),
     PRODUCT_NOT_IN_CART(HttpStatus.NOT_FOUND, "PRODUCT_NOT_IN_CART", "카트에 해당 상품이 존재하지 않습니다."),
-    FORBIDDEN_CART(HttpStatus.NOT_FOUND, "FORBIDDEN_CART", "해당 카트에 대한 권한이 없습니다.");
+    FORBIDDEN_CART(HttpStatus.NOT_FOUND, "FORBIDDEN_CART", "해당 카트에 대한 권한이 없습니다."),
+    REQUESTED_CART_ITEMS_NOT_FOUND(HttpStatus.NOT_FOUND, "REQUESTED_CART_ITEMS_NOT_FOUND", "요청한 장바구니 상품 중 일부를 찾을 수 없습니다."),
+
+    //주문 관련
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_NOT_FOUND", "주문이 존재하지 않습니다."),
+    FORBIDDEN_ORDER(HttpStatus.NOT_FOUND, "FORBIDDEN_ORDER", "해당 주문에 대한 권한이 없습니다."),
+    INVALID_STATE_TRANSITION(HttpStatus.CONFLICT, "INVALID_STATE_TRANSITION", "허용되지 않는 주문 상태 변경입니다.");
 
     private final HttpStatus status;
     private final String code;

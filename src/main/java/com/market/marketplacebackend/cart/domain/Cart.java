@@ -1,6 +1,7 @@
 package com.market.marketplacebackend.cart.domain;
 
 import com.market.marketplacebackend.account.domain.Account;
+import com.market.marketplacebackend.product.domain.Product;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,6 +10,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Entity
 @Getter
@@ -32,7 +34,23 @@ public class Cart {
         this.account = account;
     }
 
-    public void addCartItem(CartItem cartItem) {
+    public CartItem addProduct(Product product, int quantity) {
+        Optional<CartItem> existingItem = this.cartItems.stream()
+                .filter(item -> item.getProduct().equals(product))
+                .findFirst();
+
+        CartItem cartItem;
+        if (existingItem.isPresent()) {
+            cartItem = existingItem.get();
+            cartItem.addQuantity(quantity);
+        } else {
+            cartItem = CartItem.createCartItem(product, quantity);
+            this.addCartItem(cartItem);
+        }
+        return cartItem;
+    }
+
+    private void addCartItem(CartItem cartItem) {
         this.cartItems.add(cartItem);
         cartItem.setCart(this);
     }

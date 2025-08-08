@@ -44,13 +44,7 @@ public class CartService {
         Product product = productRepository.findById(cartItemAddRequestDto.getProductId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        Optional<CartItem> existingCartItem = cartItemRepository.findByCartAndProduct(cart, product);
-
-        CartItem finalCartItem = addOrUpdateCartItem(cartItemAddRequestDto, existingCartItem, product, cart);
-
-        cartItemRepository.save(finalCartItem);
-
-        return finalCartItem;
+        return cart.addProduct(product, cartItemAddRequestDto.getQuantity());
     }
 
     @Transactional
@@ -84,23 +78,4 @@ public class CartService {
 
         cart.deleteAllCartItems();
     }
-
-    private static CartItem addOrUpdateCartItem(CartItemAddRequestDto cartItemAddRequestDto, Optional<CartItem> existingCartItem, Product product, Cart cart) {
-        CartItem finalCartItem;
-        if (existingCartItem.isPresent()) {
-            finalCartItem = existingCartItem.get();
-            finalCartItem.addQuantity(cartItemAddRequestDto.getQuantity());
-        } else {
-            finalCartItem = CartItem.builder()
-                    .product(product)
-                    .quantity(cartItemAddRequestDto.getQuantity())
-                    .build();
-
-            cart.addCartItem(finalCartItem);
-        }
-        return finalCartItem;
-    }
-
-
-
 }
