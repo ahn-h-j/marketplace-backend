@@ -23,7 +23,7 @@ public class ReissueController {
     private final ReissueService reissueService;
 
     @PostMapping("/reissue")
-    private ResponseEntity<ServiceResult<ReissueResponseDto>> reissue(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<ServiceResult<ReissueResponseDto>> reissue(HttpServletRequest request, HttpServletResponse response) {
 
         Cookie[] cookies = request.getCookies();
         if(cookies == null || cookies.length == 0){
