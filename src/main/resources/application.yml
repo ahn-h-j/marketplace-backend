@@ -15,3 +15,6 @@ spring:
     driver-class-name: ${DB_DRIVER:org.h2.Driver}
   jwt:
     secret: ${JWT_SECRET:}
+  graphql:
+    cors:
+      allowed-origins: http://localhost:3000
