@@ -3,7 +3,6 @@ package com.market.marketplacebackend.account;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.market.marketplacebackend.account.controller.AccountController;
 import com.market.marketplacebackend.account.domain.Account;
-import com.market.marketplacebackend.account.dto.LoginDto;
 import com.market.marketplacebackend.account.dto.SignUpDto;
 import com.market.marketplacebackend.account.service.AccountService;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,8 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -31,6 +30,9 @@ class AccountControllerTest {
 
     @InjectMocks
     private AccountController accountController;
+
+    @Mock
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
@@ -51,8 +53,8 @@ class AccountControllerTest {
                 .password("password123")
                 .phoneNumber("010-1234-5678")
                 .build();
-
-        Account account = signUpDto.toEntity();
+        String password = bCryptPasswordEncoder.encode(signUpDto.getPassword());
+        Account account = signUpDto.toEntity(password);
 
         when(accountService.join(any(SignUpDto.class))).thenReturn(account);
 
@@ -81,54 +83,6 @@ class AccountControllerTest {
 
         // when & then
         mockMvc.perform(post("/user/signup")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidDto)))
-                .andExpect(status().isBadRequest());
-
-    }
-
-    @Test
-    @DisplayName("로그인 성공(컨트롤러)")
-    void login_Success_Controller() throws Exception{
-        //given
-        LoginDto loginDto = LoginDto.builder()
-                .email("test@example.com")
-                .password("password123")
-                .build();
-        Account account = Account.builder()
-                .id(1L)
-                .name("test")
-                .email("test@example.com")
-                .build();
-
-        when(accountService.login(any(LoginDto.class))).thenReturn(account);
-
-        //when & then
-        MvcResult mvcResult = mockMvc.perform(post("/user/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginDto)))
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("로그인 성공"))
-                .andExpect(jsonPath("$.code").value("OK"))
-                .andExpect(jsonPath("$.data.name").value("test"))
-                .andExpect(jsonPath("$.data.email").value("test@example.com"))
-                .andReturn();
-        System.out.println("실제 JSON: " + mvcResult.getResponse().getContentAsString());
-
-
-    }
-
-    @Test
-    @DisplayName("로그인 실패 - validation 오류")
-    void login_Validation_Fail() throws Exception {
-        // given - 이름이 빈 값
-        LoginDto invalidDto = LoginDto.builder()
-                .email("invalid-email")
-                .password("123")
-                .build();
-
-        // when & then
-        mockMvc.perform(post("/user/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDto)))
                 .andExpect(status().isBadRequest());

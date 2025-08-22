@@ -17,6 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,8 +31,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @Transactional
+@ActiveProfiles("test")
+@TestPropertySource(properties = {
+        "spring.jwt.secret=ksf92jf12jf23jdfh4skdlf2398rjskfjweofjr9203sldf9230jsdf023r"
+})
 public class ProductIntegrationTest {
 
     @Autowired
@@ -121,7 +127,7 @@ public class ProductIntegrationTest {
                 .name("테스트판매자")
                 .email("seller@test.com")
                 .password("password")
-                .accountRole(AccountRole.CUSTOMER)
+                .accountRole(AccountRole.BUYER)
                 .build();
         accountRepository.save(seller);
         ProductCreateRequestDto productCreateRequestDto = ProductCreateRequestDto.builder()
