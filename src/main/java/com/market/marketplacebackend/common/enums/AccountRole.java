@@ -5,8 +5,8 @@ import lombok.Getter;
 @Getter
 public enum AccountRole {
 
-    CUSTOMER("customer"),
-    SELLER("seller");
+    BUYER("BUYER"),
+    SELLER("SELLER");
 
     private final String role;
 
