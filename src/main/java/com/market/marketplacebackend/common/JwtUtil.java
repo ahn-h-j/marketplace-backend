@@ -65,6 +65,6 @@ public class JwtUtil {
 
     public boolean isRefreshToken(Claims claims) {
         String category = claims.get("category", String.class);
-        return "refresh".equalsIgnoreCase(category);
+        return TokenType.REFRESH.getValue().equalsIgnoreCase(category);
     }
 }
