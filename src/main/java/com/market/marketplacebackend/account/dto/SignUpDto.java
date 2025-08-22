@@ -30,7 +30,7 @@ public class SignUpDto {
     private String phoneNumber;
     private AccountRole accountRole;
 
-    public Account toEntity(){
+    public Account toEntity(String password){
         return Account.builder()
                 .name(name)
                 .email(email)

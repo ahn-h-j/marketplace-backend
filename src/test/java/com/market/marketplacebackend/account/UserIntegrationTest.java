@@ -1,20 +1,22 @@
 package com.market.marketplacebackend.account;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.market.marketplacebackend.common.enums.AccountRole;
 import com.market.marketplacebackend.common.exception.ErrorCode;
-import com.market.marketplacebackend.common.ServiceResult;
 import com.market.marketplacebackend.account.domain.Account;
 import com.market.marketplacebackend.account.dto.LoginDto;
 import com.market.marketplacebackend.account.dto.SignUpDto;
 import com.market.marketplacebackend.account.repository.AccountRepository;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +31,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@ActiveProfiles("test")
+@TestPropertySource(properties = {
+        "spring.jwt.secret=ksf92jf12jf23jdfh4skdlf2398rjskfjweofjr9203sldf9230jsdf023r"
+})
 public class UserIntegrationTest {
 
     @Autowired
@@ -37,6 +43,8 @@ public class UserIntegrationTest {
     private ObjectMapper objectMapper;
     @Autowired
     private AccountRepository accountRepository;
+    @Autowired
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @Test
     @DisplayName("회원가입 통합 성공 테스트")
@@ -46,7 +54,7 @@ public class UserIntegrationTest {
                 .email("test@example.com")
                 .password("password123")
                 .phoneNumber("010-1234-5678")
-                .accountRole(AccountRole.CUSTOMER)
+                .accountRole(AccountRole.BUYER)
                 .build();
 
         mockMvc.perform(post("/user/signup")
@@ -70,8 +78,8 @@ public class UserIntegrationTest {
                 .password("password123")
                 .phoneNumber("010-1234-5678")
                 .build();
-
-        Account account = signUpDto.toEntity();
+        String password = bCryptPasswordEncoder.encode(signUpDto.getPassword());
+        Account account = signUpDto.toEntity(password);
         accountRepository.save(account);
 
         mockMvc.perform(post("/user/signup")
@@ -97,54 +105,48 @@ public class UserIntegrationTest {
         Account account = Account.builder()
                 .name("test")
                 .email("test@example.com")
-                .password("password123")
+                .password(bCryptPasswordEncoder.encode("password123"))
                 .phoneNumber("010-1234-5678")
+                .accountRole(AccountRole.BUYER)
                 .build();
         accountRepository.save(account);
 
-        MvcResult result = mockMvc.perform(post("/user/login")
+        MvcResult result = mockMvc.perform(post("/login") // 경로 변경
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginDto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("로그인 성공"))
-                .andExpect(jsonPath("$.data.name").value("test"))
-                .andExpect(jsonPath("$.data.email").value("test@example.com"))
                 .andReturn();
 
-        String response =  result.getResponse().getContentAsString();
-        TypeReference<ServiceResult<Account>> typeRef = new TypeReference<>() {};
-        ServiceResult<Account> responseDto = objectMapper.readValue(response, typeRef);
+        // JWT 토큰 검증
+        String authorizationHeader = result.getResponse().getHeader("Authorization");
+        assertThat(authorizationHeader).isNotNull();
+        assertThat(authorizationHeader).startsWith("Bearer ");
 
-        assertThat(responseDto.isSuccess()).isTrue();
-        assertThat(responseDto.getMessage()).isEqualTo("로그인 성공");
-        assertThat(responseDto.getData().getName()).isEqualTo("test");
-        assertThat(responseDto.getData().getEmail()).isEqualTo("test@example.com");
+        // 쿠키 검증
+        Cookie[] cookies = result.getResponse().getCookies();
+        assertThat(cookies).isNotEmpty();
     }
 
     @Test
     @DisplayName("로그인 통합 실패 테스트(비밀번호 불일치)")
     void login_Integration_Password_Mismatch_Failure() throws Exception{
+        Account account = Account.builder()
+                .name("test")
+                .email("test@example.com")
+                .password(bCryptPasswordEncoder.encode("password123"))
+                .phoneNumber("010-1234-5678")
+                .build();
+        accountRepository.save(account);
+
         LoginDto loginDto = LoginDto.builder()
                 .email("test@example.com")
                 .password("invalidPW123")
                 .build();
 
-        Account account = Account.builder()
-                .name("test")
-                .email("test@example.com")
-                .password("password123")
-                .phoneNumber("010-1234-5678")
-                .build();
-        accountRepository.save(account);
-
-        mockMvc.perform(post("/user/login")
+        mockMvc.perform(post("/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginDto)))
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value("PASSWORD_MISMATCH"))
-                .andExpect(jsonPath("$.message").value("비밀번호가 일치하지 않습니다"));
-
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -152,7 +154,7 @@ public class UserIntegrationTest {
     void login_Integration_Email_NotFound_Failure() throws Exception{
         LoginDto loginDto = LoginDto.builder()
                 .email("invalid@example.com")
-                .password("password123")
+                .password(bCryptPasswordEncoder.encode("password123"))
                 .build();
 
         Account account = Account.builder()
@@ -163,12 +165,10 @@ public class UserIntegrationTest {
                 .build();
         accountRepository.save(account);
 
-        mockMvc.perform(post("/user/login")
+        mockMvc.perform(post("/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginDto)))
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value("EMAIL_NOT_FOUND"))
-                .andExpect(jsonPath("$.message").value("존재하지 않는 이메일입니다"));
+                .andExpect(status().isUnauthorized());
 
     }
 }

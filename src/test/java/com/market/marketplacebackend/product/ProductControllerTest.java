@@ -23,6 +23,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -40,6 +41,9 @@ public class ProductControllerTest {
 
     @InjectMocks
     private ProductController productController;
+
+    @Mock
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
@@ -63,8 +67,8 @@ public class ProductControllerTest {
                 .password("password123")
                 .phoneNumber("010-1234-5678")
                 .build();
-
-        Account account = signUpDto.toEntity();
+        String password = bCryptPasswordEncoder.encode(signUpDto.getPassword());
+        Account account = signUpDto.toEntity(password);
 
         ProductCreateRequestDto productCreateRequestDto = ProductCreateRequestDto.builder()
                 .name("test Product")

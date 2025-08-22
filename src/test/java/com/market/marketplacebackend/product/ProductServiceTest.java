@@ -109,7 +109,7 @@ class ProductServiceTest {
                 .email("test@example.com")
                 .password("password123")
                 .phoneNumber("010-1234-5678")
-                .accountRole(AccountRole.CUSTOMER)
+                .accountRole(AccountRole.BUYER)
                 .build();
         ProductCreateRequestDto productCreateRequestDto = ProductCreateRequestDto.builder()
                 .name("test Product")
