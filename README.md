@@ -19,7 +19,7 @@
 
 ### ERD
 
-![image](https://github.com/user-attachments/assets/1e7463a7-5eaf-4de7-8714-a9c1cf321eb6)
+![image](https://github.com/user-attachments/assets/c0ebbff3-8e58-4406-bd42-9f8e6bdb1966)
 
 
 # API 명세서
