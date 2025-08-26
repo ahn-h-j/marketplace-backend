@@ -25,4 +25,6 @@ public class Account {
     private String phoneNumber;
     @Enumerated(EnumType.STRING)
     private AccountRole accountRole;
+    private String provider;
+    private String providerId;
 }
