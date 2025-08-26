@@ -22,79 +22,41 @@
 ![image](https://github.com/user-attachments/assets/c0ebbff3-8e58-4406-bd42-9f8e6bdb1966)
 
 
+
 # API 명세서
 
-## Auth (인증)
+## 인증 (Authentication)
 
 | 기능 | HTTP 메소드 | URL |
 |------|-------------|-----|
-| 회원가입 | `POST` | `/join` |
-| 로그아웃 | `POST` | `/logout` |
+| 회원가입 | `POST` | `/user/signup` |
 | 토큰 재발행 | `POST` | `/reissue` |
 
-## User & Profile (사용자 및 프로필)
+## 상품 (Product)
 
 | 기능 | HTTP 메소드 | URL |
 |------|-------------|-----|
-| 내 프로필 조회 | `GET` | `/user/me` |
-| 유저 ID로 검색 | `GET` | `/user/id` |
-| 특정 유저 프로필 조회 | `GET` | `/{userId}/profile` |
-| 프로필 수정 | `PUT` | `/{userId}/profile` |
-| 회원 탈퇴 (프로필 삭제) | `DELETE` | `/{userId}/profile` |
+| 상품 등록 | `POST` | `/product` |
+| 상품 수정 | `PATCH` | `/product/{productId}` |
+| 상품 삭제 | `DELETE` | `/product/{productId}` |
+| 상품 목록 조회 | `GET` | `/product` |
+| 상품 상세 조회 | `GET` | `/product/{productId}` |
 
-## Post (게시물 - 이미지/비디오)
-
-| 기능 | HTTP 메소드 | URL |
-|------|-------------|-----|
-| 이미지 업로드 | `POST` | `/image` |
-| 이미지 수정 | `PUT` | `/image/{postSeq}` |
-| 이미지 삭제 | `DELETE` | `/image/{postSeq}` |
-| 비디오 업로드 | `POST` | `/video` |
-| 비디오 수정 | `PUT` | `/video/{postSeq}` |
-| 비디오 삭제 | `DELETE` | `/video/{postSeq}` |
-| 특정 유저 게시물 조회 | `GET` | `/feeds/user` |
-
-## Feed (피드)
+## 장바구니 (Cart)
 
 | 기능 | HTTP 메소드 | URL |
 |------|-------------|-----|
-| 내 피드 조회 | `GET` | `/feeds` |
-| 전체 피드 조회 | `GET` | `/feeds/all` |
-| 팔로우 피드 조회 | `GET` | `/feeds/follow` |
-| 본 피드 삭제 | `DELETE` | `/feeds/seen` |
+| 내 장바구니 조회 | `GET` | `/cart/{accountId}` |
+| 장바구니에 상품 추가 | `POST` | `/cart/items/{accountId}` |
+| 장바구니 상품 수량 수정 | `PATCH` | `/cart/items/{accountId}` |
+| 장바구니 상품 개별 삭제 | `DELETE` | `/cart/items/{accountId}/{cartItemId}` |
+| 장바구니 모든 상품 삭제 | `DELETE` | `/cart/items/{accountId}` |
 
-## Search (검색)
-
-| 기능 | HTTP 메소드 | URL |
-|------|-------------|-----|
-| 유저 검색 | `GET` | `/search/users` |
-| 팔로잉 검색 | `GET` | `/search/following` |
-| 팔로워 검색 | `GET` | `/search/follower` |
-| 해시태그 검색 | `GET` | `/search/tag` |
-| 해시태그 추천 | `GET` | `/search/tag/suggestions` |
-| 유저 추천 | `GET` | `/search/user/suggestions` |
-
-## Follow (팔로우)
+## 주문 (Order)
 
 | 기능 | HTTP 메소드 | URL |
 |------|-------------|-----|
-| 팔로워 목록 조회 | `GET` | `/follow/{userId}/profile/followers` |
-| 팔로잉 목록 조회 | `GET` | `/follow/{userId}/profile/following` |
-| 팔로우/언팔로우 토글 | `POST` | `/follow/{follower}/profile/{followed}` |
-
-## Like (좋아요)
-
-| 기능 | HTTP 메소드 | URL |
-|------|-------------|-----|
-| 좋아요 개수 조회 | `GET` | `/feeds/{postId}/likes` |
-| 좋아요 토글 | `POST` | `/feeds/{postId}/likes` |
-| 좋아요 여부 확인 | `GET` | `/posts/{postId}/liked` |
-
-## Comment (댓글)
-
-| 기능 | HTTP 메소드 | URL |
-|------|-------------|-----|
-| 댓글 작성 | `POST` | `/comments` |
-| 특정 댓글 조회 | `GET` | `/comments/{id}` |
-| 특정 게시물 댓글 목록 조회 | `GET` | `/comments/post/{postId}` |
-| 댓글 삭제 | `DELETE` | `/comments/{commentId}` |
+| 주문 생성 | `POST` | `/order/{accountId}` |
+| 주문 상태 변경 | `PATCH` | `/order/{orderId}/{accountId}` |
+| 내 주문 목록 조회 | `GET` | `/order/{accountId}` |
+| 주문 상세 조회 | `GET` | `/order/{accountId}/{orderId}` |
