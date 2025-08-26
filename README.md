@@ -30,8 +30,8 @@
 | 기능 | HTTP 메소드 | URL |
 |------|-------------|-----|
 | 회원가입 | `POST` | `/join` |
-| 로그인 | `POST` | `/login` |
 | 로그아웃 | `POST` | `/logout` |
+| 토큰 재발행 | `POST` | `/reissue` |
 
 ## User & Profile (사용자 및 프로필)
 
