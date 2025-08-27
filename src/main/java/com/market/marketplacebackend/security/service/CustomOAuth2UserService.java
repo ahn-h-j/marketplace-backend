@@ -41,7 +41,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         if (accountOptional.isPresent()) {
             account = accountOptional.get();
 
-            if (account.getProvider() == null || !account.getProvider().equals(provider)) {
+            if (account.getProvider() == null || !account.getProvider().equals(provider) || !Objects.equals(account.getProviderId(), providerId)) {
                 account.updateOAuthInfo(provider, providerId);
             }
         } else {
