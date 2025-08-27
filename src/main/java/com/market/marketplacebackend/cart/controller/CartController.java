@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/cart")
 @RequiredArgsConstructor
-public class CartController {
+public class CartController implements CartSwagger {
     private final CartService cartService;
 
     @GetMapping
