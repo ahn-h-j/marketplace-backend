@@ -7,6 +7,7 @@ import com.market.marketplacebackend.product.dto.ProductDetailResponseDto;
 import com.market.marketplacebackend.product.dto.ProductResponseDto;
 import com.market.marketplacebackend.product.dto.ProductUpdateRequestDto;
 import com.market.marketplacebackend.product.service.ProductService;
+import com.market.marketplacebackend.security.domain.PrincipalDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -28,9 +30,9 @@ public class ProductController {
 
     @PostMapping
     public ResponseEntity<ServiceResult<ProductDetailResponseDto>> createProduct(@Valid @RequestBody ProductCreateRequestDto productCreateRequestDto,
-                                                                                 @RequestParam Long accountId
+                                                                                 @AuthenticationPrincipal PrincipalDetails userDetails
     ){
-        Product serviceResult = productService.createProduct(accountId, productCreateRequestDto);
+        Product serviceResult = productService.createProduct(userDetails.getAccount().getId(), productCreateRequestDto);
 
         ProductDetailResponseDto responseDto = ProductDetailResponseDto.fromEntity(serviceResult);
 
@@ -38,17 +40,16 @@ public class ProductController {
                 .path("/{id}")
                 .buildAndExpand(responseDto.getId())
                 .toUri();
-
         ServiceResult<ProductDetailResponseDto> finalResult = ServiceResult.success("상품 등록 완료", responseDto);
         return ResponseEntity.created(location).body(finalResult);
     }
 
     @PatchMapping("/{productId}")
     public ResponseEntity<ServiceResult<ProductDetailResponseDto>> updateProduct(@Valid @RequestBody ProductUpdateRequestDto productUpdateRequestDto,
-                                                                                 @RequestParam Long accountId,
+                                                                                 @AuthenticationPrincipal PrincipalDetails userDetails,
                                                                                  @PathVariable Long productId
     ){
-        Product serviceResult = productService.updateProduct(accountId, productId, productUpdateRequestDto);
+        Product serviceResult = productService.updateProduct(userDetails.getAccount().getId(), productId, productUpdateRequestDto);
 
         ProductDetailResponseDto responseDto = ProductDetailResponseDto.fromEntity(serviceResult);
 
@@ -57,8 +58,8 @@ public class ProductController {
     }
 
     @DeleteMapping("/{productId}")
-    public ResponseEntity<?> deleteProduct(@RequestParam Long accountId, @PathVariable Long productId){
-        productService.deleteProduct(accountId, productId);
+    public ResponseEntity<?> deleteProduct(@AuthenticationPrincipal PrincipalDetails userDetails, @PathVariable Long productId){
+        productService.deleteProduct(userDetails.getAccount().getId(), productId);
 
         return ResponseEntity.noContent().build();
     }
