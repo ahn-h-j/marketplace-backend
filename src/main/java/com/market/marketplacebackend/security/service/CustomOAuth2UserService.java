@@ -35,18 +35,26 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String name = oAuth2UserInfo.getName();
         String email = oAuth2UserInfo.getEmail();
 
-        Optional<Account> account = accountRepository.findByEmail(email);
+        Optional<Account> accountOptional = accountRepository.findByEmail(email);
+        Account account;
 
-        Account userAccount = account.orElseGet(() -> accountRepository.save(
-                Account.builder()
-                        .name(name)
-                        .email(email)
-                        .accountRole(AccountRole.BUYER)
-                        .provider(provider)
-                        .providerId(providerId)
-                        .build()
-        ));
-        return new PrincipalDetails(userAccount, attributes);
+        if (accountOptional.isPresent()) {
+            account = accountOptional.get();
+
+            if (account.getProvider() == null || !account.getProvider().equals(provider) || !Objects.equals(account.getProviderId(), providerId)) {
+                account.updateOAuthInfo(provider, providerId);
+            }
+        } else {
+            account = Account.builder()
+                    .name(name)
+                    .email(email)
+                    .accountRole(AccountRole.BUYER)
+                    .provider(provider)
+                    .providerId(providerId)
+                    .build();
+            accountRepository.save(account);
+        }
+        return new PrincipalDetails(account, attributes);
 
     }
 }

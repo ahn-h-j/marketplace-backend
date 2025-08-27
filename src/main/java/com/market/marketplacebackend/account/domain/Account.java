@@ -19,6 +19,7 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
+    @Column(unique = true, nullable = false)
     private String email;
     @JsonIgnore
     private String password;
@@ -27,4 +28,9 @@ public class Account {
     private AccountRole accountRole;
     private String provider;
     private String providerId;
+
+    public void updateOAuthInfo(String provider, String providerId) {
+        this.provider = provider;
+        this.providerId = providerId;
+    }
 }

@@ -64,9 +64,10 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         Account account = principalDetails.getAccount();
         String email = account.getEmail();
         String role = account.getAccountRole().getRole();
+        Long id = account.getId();
 
-        String accessToken = jwtUtil.createAccessToken(email, role);
-        String refreshToken = jwtUtil.createRefreshToken(email, role);
+        String accessToken = jwtUtil.createAccessToken(id, email, role);
+        String refreshToken = jwtUtil.createRefreshToken(id, email, role);
 
         authService.saveRefreshToken(account, refreshToken);
 
