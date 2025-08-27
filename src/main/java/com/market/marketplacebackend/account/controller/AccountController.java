@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
-public class AccountController {
+public class AccountController implements AccountSwagger{
 
     private final AccountService accountService;
 

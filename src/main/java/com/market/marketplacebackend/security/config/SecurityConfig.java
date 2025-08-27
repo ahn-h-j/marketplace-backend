@@ -53,6 +53,7 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/login", "/user/signup", "/reissue").permitAll()
                         .requestMatchers(HttpMethod.GET, "/product", "/product/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/product").hasRole("SELLER")

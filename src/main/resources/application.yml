@@ -56,3 +56,10 @@ app:
   oauth2:
     failure-redirect-uri: http://localhost:3000/login
     redirect-uri: http://localhost:3000/oauth2/redirect
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    disable-swagger-default-url: true
+    path: /swagger-ui.html

@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/order")
 @RequiredArgsConstructor
-public class OrderController {
+public class OrderController implements OrderSwagger {
 
     private final OrderService orderService;
 

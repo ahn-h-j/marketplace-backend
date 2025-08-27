@@ -49,6 +49,8 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
     //Oauth
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    //Swagger
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.11'
 }
 
 tasks.named('test') {
