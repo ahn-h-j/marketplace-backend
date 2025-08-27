@@ -24,7 +24,7 @@ import java.net.URI;
 @RestController
 @RequestMapping("/product")
 @RequiredArgsConstructor
-public class ProductController {
+public class ProductController implements ProductSwagger {
 
     private final ProductService productService;
 
