@@ -40,9 +40,10 @@ public class ReissueService {
 
         String role = claims.get("role", String.class);
         String email = claims.get("email", String.class);
+        Long id = claims.get("id", Long.class);
 
-        String newAccessToken = jwtUtil.createAccessToken(email, role);
-        String newRefreshToken = jwtUtil.createRefreshToken(email, role);
+        String newAccessToken = jwtUtil.createAccessToken(id, email, role);
+        String newRefreshToken = jwtUtil.createRefreshToken(id, email, role);
 
         Account account = accountRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));

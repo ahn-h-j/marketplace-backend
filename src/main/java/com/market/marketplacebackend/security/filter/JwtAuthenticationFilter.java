@@ -50,6 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         Account account = Account.builder()
+                .id(claims.get("id",Long.class))
                 .email(claims.get("email", String.class))
                 .accountRole(AccountRole.valueOf(claims.get("role",String.class)))
                 .build();

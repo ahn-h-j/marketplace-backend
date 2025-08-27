@@ -24,16 +24,17 @@ public class JwtUtil {
         this.secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());
     }
 
-    public String createAccessToken(String email, String role) {
-        return createJwt(TokenType.ACCESS.getValue(), email, role, ACCESS_TOKEN_EXPIRE_TIME);
+    public String createAccessToken(Long id, String email, String role) {
+        return createJwt(id, TokenType.ACCESS.getValue(), email, role, ACCESS_TOKEN_EXPIRE_TIME);
     }
 
-    public String createRefreshToken(String email, String role) {
-        return createJwt(TokenType.REFRESH.getValue(), email, role, REFRESH_TOKEN_EXPIRE_TIME);
+    public String createRefreshToken(Long id, String email, String role) {
+        return createJwt(id, TokenType.REFRESH.getValue(), email, role, REFRESH_TOKEN_EXPIRE_TIME);
     }
 
-    public String createJwt(String category, String email, String role, Long expiredMs){
+    public String createJwt(Long id, String category, String email, String role, Long expiredMs){
         return Jwts.builder()
+                .claim("id", id)
                 .claim("category", category)
                 .claim("email",email)
                 .claim("role", role)
