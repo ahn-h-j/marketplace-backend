@@ -18,7 +18,7 @@ import java.util.Arrays;
 
 @RestController
 @RequiredArgsConstructor
-public class ReissueController {
+public class ReissueController implements ReissueSwagger {
 
     private final ReissueService reissueService;
 
