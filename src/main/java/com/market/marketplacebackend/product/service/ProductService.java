@@ -49,8 +49,8 @@ public class ProductService {
         checkProductOwnership(product, accountId);
         String imageUrl = "";
         if(image != null){
-            imageService.deleteImage(product.getImageUrl());
             imageUrl = imageService.uploadImage(image);
+            imageService.deleteImage(product.getImageUrl());
         }
         product.updateIfChanged(productUpdateRequestDto, imageUrl);
 
