@@ -22,6 +22,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @Tag(name = "Product", description = "상품 관리 API")
 @RequestMapping("/product")
@@ -155,9 +158,10 @@ public interface ProductSwagger {
     })
     @PostMapping
     ResponseEntity<ServiceResult<ProductDetailResponseDto>> createProduct(
-            @Valid @org.springframework.web.bind.annotation.RequestBody ProductCreateRequestDto productCreateRequestDto,
-            @AuthenticationPrincipal PrincipalDetails userDetails
-    );
+            @Valid @RequestBody ProductCreateRequestDto productCreateRequestDto,
+            @AuthenticationPrincipal PrincipalDetails userDetails,
+            MultipartFile image
+    ) throws IOException;
 
     @Operation(
             summary = "상품 수정",
@@ -273,8 +277,9 @@ public interface ProductSwagger {
     ResponseEntity<ServiceResult<ProductDetailResponseDto>> updateProduct(
             @Valid @org.springframework.web.bind.annotation.RequestBody ProductUpdateRequestDto productUpdateRequestDto,
             @AuthenticationPrincipal PrincipalDetails userDetails,
+            @RequestPart("image") MultipartFile image,
             @PathVariable Long productId
-    );
+    ) throws IOException;
 
     @Operation(
             summary = "상품 삭제",

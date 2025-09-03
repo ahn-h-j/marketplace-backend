@@ -3,6 +3,7 @@ package com.market.marketplacebackend.config;
 import com.market.marketplacebackend.cart.service.CartService;
 import com.market.marketplacebackend.common.CookieUtil;
 import com.market.marketplacebackend.common.JwtUtil;
+import com.market.marketplacebackend.common.service.ImageService;
 import com.market.marketplacebackend.product.service.ProductService;
 import com.market.marketplacebackend.security.service.AuthService;
 import org.mockito.Mockito;
@@ -41,5 +42,10 @@ public class TestConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
+    }
+
+    @Bean
+    public ImageService imageService(){
+        return Mockito.mock(ImageService.class);
     }
 }

@@ -44,7 +44,6 @@ public class UserIntegrationTest {
     private AccountRepository accountRepository;
     @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
-
     @Test
     @DisplayName("회원가입 통합 성공 테스트")
     void signUp_Integration_Success() throws Exception{

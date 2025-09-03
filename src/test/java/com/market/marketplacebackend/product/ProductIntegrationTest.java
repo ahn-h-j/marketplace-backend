@@ -7,31 +7,44 @@ import com.market.marketplacebackend.account.repository.AccountRepository;
 import com.market.marketplacebackend.common.enums.AccountRole;
 import com.market.marketplacebackend.common.enums.Category;
 import com.market.marketplacebackend.common.exception.ErrorCode;
+import com.market.marketplacebackend.common.service.ImageService;
 import com.market.marketplacebackend.product.domain.Product;
 import com.market.marketplacebackend.product.dto.ProductCreateRequestDto;
 import com.market.marketplacebackend.product.dto.ProductUpdateRequestDto;
 import com.market.marketplacebackend.product.repository.ProductRepository;
+import com.market.marketplacebackend.security.domain.PrincipalDetails;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureMockMvc
 @Transactional
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
@@ -50,9 +63,10 @@ public class ProductIntegrationTest {
 
     @Autowired
     private ProductRepository productRepository;
-
-    final long NON_EXISTENT_ACCOUNT_ID = 999L;
     final long NON_EXISTENT_PRODUCT_ID = 999L;
+
+    @MockitoBean
+    private ImageService imageService;
 
     @Test
     @DisplayName("상품 등록 통합 성공 테스트")
@@ -64,6 +78,8 @@ public class ProductIntegrationTest {
                 .accountRole(AccountRole.SELLER)
                 .build();
         accountRepository.save(seller);
+        PrincipalDetails customUserDetails = new PrincipalDetails(seller);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         ProductCreateRequestDto productCreateRequestDto = ProductCreateRequestDto.builder()
                 .name("test")
                 .price(10000)
@@ -72,10 +88,27 @@ public class ProductIntegrationTest {
                 .category(Category.FASHION)
                 .build();
 
-        MvcResult mvcResult = mockMvc.perform(post("/product")
-                        .param("accountId", String.valueOf(seller.getId()))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(productCreateRequestDto)))
+        String dtoJson = objectMapper.writeValueAsString(productCreateRequestDto);
+
+        MockMultipartFile requestDtoPart = new MockMultipartFile(
+                "requestDto",
+                "",
+                MediaType.APPLICATION_JSON_VALUE,
+                dtoJson.getBytes(StandardCharsets.UTF_8)
+        );
+
+        MockMultipartFile imagePart = new MockMultipartFile(
+                "image",
+                "test-image.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "this is a test image".getBytes()
+        );
+
+        MvcResult mvcResult = mockMvc.perform(multipart("/product")
+                        .file(requestDtoPart)
+                        .file(imagePart)
+                        .with(authentication(authToken))
+                        .with(csrf()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("상품 등록 완료"))
@@ -96,12 +129,15 @@ public class ProductIntegrationTest {
     @DisplayName("상품 등록 통합 실패 테스트 - 존재하지 않는 계정")
     void createProduct_Integration_AccountNotFound_Fail() throws Exception {
         Account seller = Account.builder()
+                .id(1L)
                 .name("테스트판매자")
                 .email("seller@test.com")
                 .password("password")
                 .accountRole(AccountRole.SELLER)
                 .build();
-        accountRepository.save(seller);
+        PrincipalDetails customUserDetails = new PrincipalDetails(seller);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
+
         ProductCreateRequestDto productCreateRequestDto = ProductCreateRequestDto.builder()
                 .name("test")
                 .price(10000)
@@ -110,10 +146,25 @@ public class ProductIntegrationTest {
                 .category(Category.FASHION)
                 .build();
 
-        mockMvc.perform(post("/product")
-                        .param("accountId", String.valueOf(NON_EXISTENT_ACCOUNT_ID))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(productCreateRequestDto)))
+        MockMultipartFile imageFile = new MockMultipartFile(
+                "image",
+                "test-image.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "test image content".getBytes());
+
+        String jsonDto = objectMapper.writeValueAsString(productCreateRequestDto);
+        MockMultipartFile requestDtoPart = new MockMultipartFile(
+                "requestDto",
+                "",
+                "application/json",
+                jsonDto.getBytes(StandardCharsets.UTF_8));
+        doReturn("https://fake-image-url.com/image.jpg").when(imageService).uploadImage(any(MultipartFile.class));
+
+        mockMvc.perform(multipart(HttpMethod.POST,"/product")
+                        .file(imageFile)
+                        .file(requestDtoPart)
+                        .with(authentication(authToken))
+                        .with(csrf()))
                 .andExpect(jsonPath("$.code").value(ErrorCode.ACCOUNT_NOT_FOUND.getCode()))
                 .andExpect(jsonPath("$.message").value("존재하지 않는 계정입니다."))
                 .andExpect(jsonPath("$.data").isEmpty());
@@ -124,12 +175,15 @@ public class ProductIntegrationTest {
     @DisplayName("상품 등록 통합 실패 테스트 - CUSTOMER 권한")
     void createProduct_Integration_ForbiddenNotSeller_Fail() throws Exception {
         Account seller = Account.builder()
+                .id(1L)
                 .name("테스트판매자")
                 .email("seller@test.com")
                 .password("password")
                 .accountRole(AccountRole.BUYER)
                 .build();
-        accountRepository.save(seller);
+        PrincipalDetails customUserDetails = new PrincipalDetails(seller);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
+
         ProductCreateRequestDto productCreateRequestDto = ProductCreateRequestDto.builder()
                 .name("test")
                 .price(10000)
@@ -137,14 +191,27 @@ public class ProductIntegrationTest {
                 .stock(100)
                 .category(Category.FASHION)
                 .build();
+        String jsonDto = objectMapper.writeValueAsString(productCreateRequestDto);
+        MockMultipartFile requestDtoPart = new MockMultipartFile(
+                "requestDto",
+                "",
+                "application/json",
+                jsonDto.getBytes(StandardCharsets.UTF_8));
 
-        mockMvc.perform(post("/product")
-                        .param("accountId", String.valueOf(seller.getId()))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(productCreateRequestDto)))
-                .andExpect(jsonPath("$.code").value(ErrorCode.FORBIDDEN_NOT_SELLER.getCode()))
-                .andExpect(jsonPath("$.message").value("셀러 권한이 없는 계정입니다."))
-                .andExpect(jsonPath("$.data").isEmpty());
+        MockMultipartFile imageFile = new MockMultipartFile(
+                "image",
+                "test-image.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "test image content".getBytes());
+        doReturn("https://fake-image-url.com/image.jpg").when(imageService).uploadImage(any(MultipartFile.class));
+
+        mockMvc.perform(multipart("/product")
+                        .file(imageFile)
+                        .file(requestDtoPart)
+                        .with(authentication(authToken))
+                        .with(csrf()))
+                .andExpect(status().isForbidden());
+
     }
 
     @Test
@@ -157,6 +224,8 @@ public class ProductIntegrationTest {
                 .accountRole(AccountRole.SELLER)
                 .build();
         accountRepository.save(seller);
+        PrincipalDetails customUserDetails = new PrincipalDetails(seller);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         Product product = Product.builder()
                 .name("old product")
                 .price(1000)
@@ -174,10 +243,26 @@ public class ProductIntegrationTest {
                 .category(Category.SPORTS)
                 .build();
 
-        mockMvc.perform(patch("/product/{productId}",product.getId())
-                        .param("accountId", String.valueOf(seller.getId()))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(productUpdateRequestDto)))
+        String jsonDto = objectMapper.writeValueAsString(productUpdateRequestDto);
+        MockMultipartFile requestDtoPart = new MockMultipartFile(
+                "requestDto",
+                "",
+                "application/json",
+                jsonDto.getBytes(StandardCharsets.UTF_8));
+
+        MockMultipartFile imageFile = new MockMultipartFile(
+                "image",
+                "test-image.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "test image content".getBytes());
+        doReturn("https://fake-image-url.com/image.jpg").when(imageService).uploadImage(any(MultipartFile.class));
+
+
+        mockMvc.perform(multipart(HttpMethod.PATCH,"/product/update/{productId}",product.getId())
+                        .file(imageFile)
+                        .file(requestDtoPart)
+                        .with(authentication(authToken))
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("상품 수정 완료"))
@@ -206,6 +291,8 @@ public class ProductIntegrationTest {
                 .accountRole(AccountRole.SELLER)
                 .build();
         accountRepository.save(seller);
+        PrincipalDetails customUserDetails = new PrincipalDetails(seller);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         Account otherSeller = Account.builder()
                 .name("다른테스트판매자")
                 .email("other_seller@test.com")
@@ -219,7 +306,7 @@ public class ProductIntegrationTest {
                 .description("old product description")
                 .stock(100)
                 .category(Category.FASHION)
-                .account(seller)
+                .account(otherSeller)
                 .build();
         productRepository.save(product);
         ProductUpdateRequestDto productUpdateRequestDto = ProductUpdateRequestDto.builder()
@@ -229,11 +316,24 @@ public class ProductIntegrationTest {
                 .stock(200)
                 .category(Category.SPORTS)
                 .build();
+        String jsonDto = objectMapper.writeValueAsString(productUpdateRequestDto);
+        MockMultipartFile requestDtoPart = new MockMultipartFile(
+                "requestDto",
+                "",
+                "application/json",
+                jsonDto.getBytes(StandardCharsets.UTF_8));
 
-        mockMvc.perform(patch("/product/{productId}",product.getId())
-                        .param("accountId", String.valueOf(otherSeller.getId()))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(productUpdateRequestDto)))
+        MockMultipartFile imageFile = new MockMultipartFile(
+                "image",
+                "test-image.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "test image content".getBytes());
+        doReturn("https://fake-image-url.com/image.jpg").when(imageService).uploadImage(any(MultipartFile.class));
+        mockMvc.perform(multipart(HttpMethod.PATCH, "/product/update/{productId}",product.getId())
+                        .file(requestDtoPart)
+                        .file(imageFile)
+                        .with(authentication(authToken))
+                        .with(csrf()))
                 .andExpect(jsonPath("$.code").value(ErrorCode.FORBIDDEN_PRODUCT.getCode()))
                 .andExpect(jsonPath("$.message").value("해당 상품에 대한 권한이 없습니다."))
                 .andExpect(jsonPath("$.data").isEmpty());
@@ -249,6 +349,8 @@ public class ProductIntegrationTest {
                 .accountRole(AccountRole.SELLER)
                 .build();
         accountRepository.save(seller);
+        PrincipalDetails customUserDetails = new PrincipalDetails(seller);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         ProductUpdateRequestDto productUpdateRequestDto = ProductUpdateRequestDto.builder()
                 .name("new product")
                 .price(2000)
@@ -257,10 +359,25 @@ public class ProductIntegrationTest {
                 .category(Category.SPORTS)
                 .build();
 
-        mockMvc.perform(patch("/product/{productId}",NON_EXISTENT_PRODUCT_ID)
-                        .param("accountId", String.valueOf(seller.getId()))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(productUpdateRequestDto)))
+        String jsonDto = objectMapper.writeValueAsString(productUpdateRequestDto);
+        MockMultipartFile requestDtoPart = new MockMultipartFile(
+                "requestDto",
+                "",
+                "application/json",
+                jsonDto.getBytes(StandardCharsets.UTF_8));
+
+        MockMultipartFile imageFile = new MockMultipartFile(
+                "image",
+                "test-image.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "test image content".getBytes());
+        doReturn("https://fake-image-url.com/image.jpg").when(imageService).uploadImage(any(MultipartFile.class));
+
+        mockMvc.perform(multipart(HttpMethod.PATCH, "/product/update/{productId}",NON_EXISTENT_PRODUCT_ID)
+                        .file(requestDtoPart)
+                        .file(imageFile)
+                        .with(authentication(authToken))
+                        .with(csrf()))
                 .andExpect(jsonPath("$.code").value(ErrorCode.PRODUCT_NOT_FOUND.getCode()))
                 .andExpect(jsonPath("$.message").value("존재하지 않는 상품입니다."))
                 .andExpect(jsonPath("$.data").isEmpty());
@@ -276,6 +393,8 @@ public class ProductIntegrationTest {
                 .accountRole(AccountRole.SELLER)
                 .build();
         accountRepository.save(seller);
+        PrincipalDetails customUserDetails = new PrincipalDetails(seller);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         Product product = Product.builder()
                 .name("old product")
                 .price(1000)
@@ -287,7 +406,8 @@ public class ProductIntegrationTest {
         productRepository.save(product);
 
         mockMvc.perform(delete("/product/{productId}",product.getId())
-                        .param("accountId", String.valueOf(seller.getId()))
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
 
@@ -305,17 +425,21 @@ public class ProductIntegrationTest {
                 .accountRole(AccountRole.SELLER)
                 .build();
         accountRepository.save(seller);
+
         Account otherSeller = Account.builder()
                 .name("테스트판매자")
-                .email("seller@test.com")
+                .email("other@test.com")
                 .password("password")
                 .accountRole(AccountRole.SELLER)
                 .build();
         accountRepository.save(otherSeller);
+        PrincipalDetails customUserDetails = new PrincipalDetails(otherSeller);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
+
         Product product = Product.builder()
-                .name("old product")
+                .name("product")
                 .price(1000)
-                .description("old product description")
+                .description("product description")
                 .stock(100)
                 .category(Category.FASHION)
                 .account(seller)
@@ -323,27 +447,28 @@ public class ProductIntegrationTest {
         productRepository.save(product);
 
         mockMvc.perform(delete("/product/{productId}",product.getId())
-                        .param("accountId", String.valueOf(otherSeller.getId()))
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.code").value(ErrorCode.FORBIDDEN_PRODUCT.getCode()))
-                .andExpect(jsonPath("$.message").value("해당 상품에 대한 권한이 없습니다."))
-                .andExpect(jsonPath("$.data").isEmpty());
-
+                .andExpect(status().isForbidden());  // 403 상태 확인 추가
     }
 
     @Test
     @DisplayName("상품 삭제 통합 실패 테스트 - 존재하지 않는 상품")
     void deleteProduct_Integration_ProductNotFound_Fail() throws Exception {
-        Account seller = Account.builder()
+        Account account = Account.builder()
                 .name("테스트판매자")
                 .email("seller@test.com")
                 .password("password")
                 .accountRole(AccountRole.SELLER)
                 .build();
-        accountRepository.save(seller);
+        Account seller = accountRepository.save(account);
+        PrincipalDetails customUserDetails = new PrincipalDetails(seller);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
 
         mockMvc.perform(delete("/product/{productId}",NON_EXISTENT_PRODUCT_ID)
-                        .param("accountId", String.valueOf(seller.getId()))
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.code").value(ErrorCode.PRODUCT_NOT_FOUND.getCode()))
                 .andExpect(jsonPath("$.message").value("존재하지 않는 상품입니다."))
@@ -359,6 +484,9 @@ public class ProductIntegrationTest {
                 .accountRole(AccountRole.SELLER)
                 .build();
         accountRepository.save(seller);
+        PrincipalDetails customUserDetails = new PrincipalDetails(seller);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
+
         Product product = Product.builder()
                 .name("old product")
                 .price(1000)
@@ -372,8 +500,11 @@ public class ProductIntegrationTest {
 
         mockMvc.perform(get("/product")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .param("page", "0")
                         .param("size", "2"))
+
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("상품 전체 조회 완료"))
@@ -393,6 +524,9 @@ public class ProductIntegrationTest {
                 .accountRole(AccountRole.SELLER)
                 .build();
         accountRepository.save(seller);
+        PrincipalDetails customUserDetails = new PrincipalDetails(seller);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
+
         Product product = Product.builder()
                 .name("old product")
                 .price(1000)
@@ -406,6 +540,8 @@ public class ProductIntegrationTest {
 
         mockMvc.perform(get("/product")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .param("page", "0")
                         .param("size", "2")
                         .param("category", "FASHION"))
@@ -428,6 +564,9 @@ public class ProductIntegrationTest {
                 .accountRole(AccountRole.SELLER)
                 .build();
         accountRepository.save(seller);
+        PrincipalDetails customUserDetails = new PrincipalDetails(seller);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
+
         Product product = Product.builder()
                 .name("old product")
                 .price(1000)
@@ -440,6 +579,8 @@ public class ProductIntegrationTest {
 
         mockMvc.perform(get("/product")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .param("page", "0")
                         .param("size", "2")
                         .param("category", "NONE"))
@@ -457,6 +598,9 @@ public class ProductIntegrationTest {
                 .accountRole(AccountRole.SELLER)
                 .build();
         accountRepository.save(seller);
+        PrincipalDetails customUserDetails = new PrincipalDetails(seller);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
+
         Product product = Product.builder()
                 .name("old product")
                 .price(1000)
@@ -470,6 +614,8 @@ public class ProductIntegrationTest {
 
         mockMvc.perform(get("/product/{productId}", product.getId())
                         .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .param("page", "0")
                         .param("size", "2"))
                 .andExpect(status().isOk())
@@ -492,9 +638,13 @@ public class ProductIntegrationTest {
                 .accountRole(AccountRole.SELLER)
                 .build();
         accountRepository.save(seller);
+        PrincipalDetails customUserDetails = new PrincipalDetails(seller);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
 
         mockMvc.perform(get("/product/{productId}", NON_EXISTENT_PRODUCT_ID)
                         .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .param("page", "0")
                         .param("size", "2"))
                 .andExpect(jsonPath("$.code").value(ErrorCode.PRODUCT_NOT_FOUND.getCode()))

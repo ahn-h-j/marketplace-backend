@@ -1,0 +1,9 @@
+spring:
+  jwt:
+    secret: ksf92jf12jf23jdfh4skdlf2398rjskfjweofjr9203sldf9230jsdf023r
+r2:
+  access-key: "test-access-key"
+  secret-key: "test-secret-key"
+  account-id: "test-account-id"
+  bucket-name: "test-bucket-name"
+  public-url: "https://pub-test.r2.dev"
