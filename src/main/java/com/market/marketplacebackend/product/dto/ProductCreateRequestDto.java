@@ -23,7 +23,7 @@ public class ProductCreateRequestDto {
     @NotNull(message = "카테고리를 입력해주세요")
     private Category category;
 
-    public Product toEntity(Account account){
+    public Product toEntity(Account account, String imageUrl){
         return Product.builder()
                 .name(name)
                 .price(price)
@@ -31,6 +31,7 @@ public class ProductCreateRequestDto {
                 .stock(stock)
                 .category(category)
                 .account(account)
+                .imageUrl(imageUrl)
                 .build();
     }
 }

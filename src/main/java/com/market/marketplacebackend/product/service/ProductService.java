@@ -6,6 +6,7 @@ import com.market.marketplacebackend.common.enums.AccountRole;
 import com.market.marketplacebackend.common.enums.Category;
 import com.market.marketplacebackend.common.exception.BusinessException;
 import com.market.marketplacebackend.common.exception.ErrorCode;
+import com.market.marketplacebackend.common.service.ImageService;
 import com.market.marketplacebackend.product.domain.Product;
 import com.market.marketplacebackend.product.dto.ProductCreateRequestDto;
 import com.market.marketplacebackend.product.dto.ProductUpdateRequestDto;
@@ -15,7 +16,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.Objects;
 
 @Service
@@ -24,38 +27,44 @@ public class ProductService {
 
     private final AccountRepository accountRepository;
     private final ProductRepository productRepository;
+    private final ImageService imageService;
 
     @Transactional
-    public Product createProduct(Long accountId, ProductCreateRequestDto productCreateRequestDto) {
+    public Product createProduct(Long accountId, ProductCreateRequestDto productCreateRequestDto, MultipartFile image) throws IOException {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
 
         verifyIsSeller(account);
-
-        Product product = productCreateRequestDto.toEntity(account);
+        String imageUrl = imageService.uploadImage(image);
+        Product product = productCreateRequestDto.toEntity(account, imageUrl);
 
         return productRepository.save(product);
     }
 
     @Transactional
-    public Product updateProduct(Long accountId, Long productId, ProductUpdateRequestDto productUpdateRequestDto) {
+    public Product updateProduct(Long accountId, Long productId, ProductUpdateRequestDto productUpdateRequestDto, MultipartFile image) throws IOException {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
         checkProductOwnership(product, accountId);
-
-        product.updateIfChanged(productUpdateRequestDto);
+        String imageUrl = "";
+        if(image != null){
+            imageUrl = imageService.uploadImage(image);
+            imageService.deleteImage(product.getImageUrl());
+        }
+        product.updateIfChanged(productUpdateRequestDto, imageUrl);
 
         return product;
     }
 
     @Transactional
-    public void deleteProduct(Long accountId, Long productId) {
+    public void deleteProduct(Long accountId, Long productId){
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
         checkProductOwnership(product, accountId);
 
+        imageService.deleteImage(product.getImageUrl());
         productRepository.delete(product);
     }
 

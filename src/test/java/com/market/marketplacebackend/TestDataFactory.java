@@ -5,12 +5,10 @@ import com.market.marketplacebackend.cart.domain.Cart;
 import com.market.marketplacebackend.cart.domain.CartItem;
 import com.market.marketplacebackend.cart.dto.CartItemAddRequestDto;
 import com.market.marketplacebackend.cart.dto.CartItemUpdateDto;
+import com.market.marketplacebackend.common.enums.AccountRole;
 import com.market.marketplacebackend.common.enums.Category;
 import com.market.marketplacebackend.product.domain.Product;
 
-/**
- * Cart 관련 테스트에서 사용할 객체를 생성하는 헬퍼 클래스입니다.
- */
 public class TestDataFactory {
 
     public static Account createAccount() {
@@ -19,6 +17,17 @@ public class TestDataFactory {
                 .email("test@example.com")
                 .password("password123")
                 .phoneNumber("010-1234-5678")
+                .accountRole(AccountRole.BUYER)
+                .build();
+    }
+    public static Account createAccount(Long id) {
+        return Account.builder()
+                .id(id)
+                .name("test User")
+                .email("test@example.com")
+                .password("password123")
+                .phoneNumber("010-1234-5678")
+                .accountRole(AccountRole.BUYER)
                 .build();
     }
 
@@ -30,6 +39,20 @@ public class TestDataFactory {
                 .stock(100)
                 .category(Category.FASHION)
                 .account(account)
+                .imageUrl("ImageUrl")
+                .build();
+    }
+
+    public static Product createProduct(Long id, Account account) {
+        return Product.builder()
+                .id(id)
+                .name("test product")
+                .price(10000)
+                .description("this is test product")
+                .stock(100)
+                .category(Category.FASHION)
+                .account(account)
+                .imageUrl("ImageUrl")
                 .build();
     }
 

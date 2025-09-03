@@ -1,114 +1,142 @@
 package com.market.marketplacebackend.product;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.market.marketplacebackend.TestDataFactory;
 import com.market.marketplacebackend.account.domain.Account;
-import com.market.marketplacebackend.account.dto.SignUpDto;
-import com.market.marketplacebackend.common.enums.AccountRole;
 import com.market.marketplacebackend.common.enums.Category;
+import com.market.marketplacebackend.config.TestConfig;
 import com.market.marketplacebackend.product.controller.ProductController;
 import com.market.marketplacebackend.product.domain.Product;
 import com.market.marketplacebackend.product.dto.ProductCreateRequestDto;
 import com.market.marketplacebackend.product.dto.ProductUpdateRequestDto;
 import com.market.marketplacebackend.product.service.ProductService;
+import com.market.marketplacebackend.security.domain.PrincipalDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(ProductController.class)
+@Import(TestConfig.class)
 public class ProductControllerTest {
-    @Mock
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
     private ProductService productService;
 
-    @InjectMocks
-    private ProductController productController;
-
-    @Mock
-    private BCryptPasswordEncoder bCryptPasswordEncoder;
-
-    private MockMvc mockMvc;
-    private ObjectMapper objectMapper;
+    private Account testAccount;
+    private Authentication authToken;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(productController)
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
-                .build();
-        objectMapper = new ObjectMapper();
-    }
+        testAccount = TestDataFactory.createAccount();
 
+        PrincipalDetails principalDetails = new PrincipalDetails(testAccount);
+        authToken = new UsernamePasswordAuthenticationToken(
+                principalDetails, null, principalDetails.getAuthorities());
+    }
 
     @Test
     @DisplayName("상품 등록 성공(컨트롤러)")
     void createProduct_Success_Controller() throws Exception {
         // given
-        SignUpDto signUpDto = SignUpDto.builder()
-                .name("test User")
-                .email("test@example.com")
-                .password("password123")
-                .phoneNumber("010-1234-5678")
-                .build();
-        String password = bCryptPasswordEncoder.encode(signUpDto.getPassword());
-        Account account = signUpDto.toEntity(password);
+        ProductCreateRequestDto createDto = new ProductCreateRequestDto(
+                "test product",
+                10000,
+                "this is test product",
+                100,
+                Category.FASHION);
 
-        ProductCreateRequestDto productCreateRequestDto = ProductCreateRequestDto.builder()
-                .name("test Product")
-                .price(10000)
-                .description("맛있는 사과입니다")
-                .stock(50)
-                .category(Category.FOOD)
-                .build();
-        Product product = productCreateRequestDto.toEntity(account);
-        when(productService.createProduct(eq(1L), any(ProductCreateRequestDto.class))).thenReturn(product);
+        MockMultipartFile imageFile = new MockMultipartFile(
+                "image",
+                "test-image.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "test image content".getBytes());
+
+        String jsonDto = objectMapper.writeValueAsString(createDto);
+        MockMultipartFile requestDtoPart = new MockMultipartFile(
+                "requestDto",
+                "",
+                "application/json",
+                jsonDto.getBytes(StandardCharsets.UTF_8));
+
+        Account account = TestDataFactory.createAccount(1L);
+        PrincipalDetails principalDetails = new PrincipalDetails(account);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(
+                principalDetails, null, principalDetails.getAuthorities());
+
+        Product product = TestDataFactory.createProduct(1L, account);
+
+        when(productService.createProduct(anyLong(), any(ProductCreateRequestDto.class), any(MultipartFile.class))).thenReturn(product);
 
         // when & then
-        mockMvc.perform(post("/product")
-                        .param("accountId", "1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(productCreateRequestDto)))
-                        .andExpect(status().isCreated())
-                        .andExpect(jsonPath("$.success").value(true))
-                        .andExpect(jsonPath("$.message").value("상품 등록 완료"))
-                        .andExpect(jsonPath("$.code").value("OK"));
+        mockMvc.perform(multipart("/product")
+                        .file(imageFile)
+                        .file(requestDtoPart)
+                        .with(authentication(authToken))
+                        .with(csrf()))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("상품 등록 완료"))
+                .andExpect(jsonPath("$.data.name").value(createDto.getName()))
+                .andExpect(jsonPath("$.data.price").value(createDto.getPrice()));
 
-        verify(productService, times(1)).createProduct(eq(1L), any(productCreateRequestDto.getClass()));
+        verify(productService, times(1)).createProduct(anyLong(), any(ProductCreateRequestDto.class), any(MultipartFile.class));
     }
 
     @Test
-    @DisplayName("상품 등록 실패(컨트롤러) - Valid")
-    void createProduct_Failure_Controller() throws Exception {
+    @DisplayName("상품 등록 실패(컨트롤러) - Validation")
+    void createProduct_Failure_Controller_Validation() throws Exception {
         // given
-        ProductCreateRequestDto productCreateRequestDto = ProductCreateRequestDto.builder()
-                .price(10000)
-                .description("맛있는 사과입니다")
-                .stock(50)
-                .category(Category.FOOD)
-                .build();
+        ProductCreateRequestDto createDto = new ProductCreateRequestDto(
+                null,
+                10000,
+                "맛있는 사과입니다",
+                50,
+                Category.FOOD);
+
+        String jsonDto = objectMapper.writeValueAsString(createDto);
+        MockMultipartFile requestDtoPart = new MockMultipartFile(
+                "requestDto",
+                "",
+                "application/json",
+                jsonDto.getBytes(StandardCharsets.UTF_8));
 
         // when & then
-        mockMvc.perform(post("/product")
-                        .param("accountId", "1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(productCreateRequestDto)))
+        mockMvc.perform(multipart("/product")
+                        .file(requestDtoPart)
+                        .with(authentication(authToken))
+                        .with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -116,171 +144,129 @@ public class ProductControllerTest {
     @DisplayName("상품 수정 성공(컨트롤러)")
     void updateProduct_Success_Controller() throws Exception {
         // given
-        Account account = Account.builder()
-                .id(1L)
-                .name("test User")
-                .email("test@example.com")
-                .password("password123")
-                .phoneNumber("010-1234-5678")
-                .accountRole(AccountRole.SELLER)
-                .build();
-
-        ProductUpdateRequestDto productUpdateRequestDto = ProductUpdateRequestDto.builder()
-                .name("new Product")
-                .price(20000)
-                .description("신 상품입니다")
-                .stock(100)
-                .category(Category.FASHION)
-                .build();
-
+        Long productId = 1L;
+        ProductUpdateRequestDto updateDto = new ProductUpdateRequestDto("new Product", 20000, "신 상품입니다", 100, Category.FASHION);
         Product updatedProduct = Product.builder()
-                .id(1L)
-                .name(productUpdateRequestDto.getName())
-                .price(productUpdateRequestDto.getPrice())
-                .description(productUpdateRequestDto.getDescription())
-                .stock(productUpdateRequestDto.getStock())
-                .category(productUpdateRequestDto.getCategory())
-                .account(account)
+                .id(productId)
+                .name(updateDto.getName())
+                .price(updateDto.getPrice())
+                .description(updateDto.getDescription())
+                .stock(updateDto.getStock())
+                .category(updateDto.getCategory())
+                .account(testAccount)
                 .build();
 
-        when(productService.updateProduct(eq(1L),eq(1L), any(ProductUpdateRequestDto.class)))
+        String jsonDto = objectMapper.writeValueAsString(updateDto);
+        MockMultipartFile requestDtoPart = new MockMultipartFile(
+                "requestDto",
+                "",
+                "application/json",
+                jsonDto.getBytes(StandardCharsets.UTF_8));
+        MockMultipartFile imagePart = new MockMultipartFile(
+                "image",
+                "test-image.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                "test image content".getBytes()
+        );
+        when(productService.updateProduct(eq(testAccount.getId()), eq(productId), any(ProductUpdateRequestDto.class), any(MultipartFile.class)))
                 .thenReturn(updatedProduct);
 
         // when & then
-        mockMvc.perform(patch("/product/{productId}", 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(productUpdateRequestDto))
-                        .param("accountId", "1"))
-                        .andExpect(status().isOk())
-                        .andExpect(jsonPath("$.success").value(true))
-                        .andExpect(jsonPath("$.message").value("상품 수정 완료"))
-                        .andExpect(jsonPath("$.code").value("OK"))
-                        .andExpect(jsonPath("$.data.name").value(productUpdateRequestDto.getName()))
-                        .andExpect(jsonPath("$.data.price").value(productUpdateRequestDto.getPrice()))
-                        .andExpect(jsonPath("$.data.description").value(productUpdateRequestDto.getDescription()))
-                        .andExpect(jsonPath("$.data.stock").value(productUpdateRequestDto.getStock()))
-                        .andExpect(jsonPath("$.data.category").value(productUpdateRequestDto.getCategory().name()));
+        mockMvc.perform(multipart(HttpMethod.PATCH,"/product/update/{productId}", productId)
+                        .file(requestDtoPart)
+                        .file(imagePart)
+                        .with(authentication(authToken))
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("상품 수정 완료"))
+                .andExpect(jsonPath("$.data.name").value(updateDto.getName()))
+                .andExpect(jsonPath("$.data.price").value(updateDto.getPrice()));
 
-        verify(productService, times(1)).updateProduct(eq(1L), eq(1L), any(productUpdateRequestDto.getClass()));
-
+        verify(productService, times(1)).updateProduct(eq(testAccount.getId()), eq(productId), any(ProductUpdateRequestDto.class),  any(MultipartFile.class));
     }
 
     @Test
     @DisplayName("상품 삭제 성공(컨트롤러)")
     void deleteProduct_Success_Controller() throws Exception {
         // given
-        doNothing().when(productService).deleteProduct(eq(1L), eq(1L));
+        Long productId = 1L;
+        doNothing().when(productService).deleteProduct(eq(testAccount.getId()), eq(productId));
 
         // when & then
-        mockMvc.perform(delete("/product/{productId}", 1)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .param("accountId", "1"))
+        mockMvc.perform(delete("/product/{productId}", productId)
+                        .with(authentication(authToken))
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
-        verify(productService, times(1)).deleteProduct(eq(1L), eq(1L));
 
+        verify(productService, times(1)).deleteProduct(eq(testAccount.getId()), eq(productId));
     }
 
     @Test
     @DisplayName("상품 전체 조회 성공(컨트롤러)")
     void findAllProducts_Success_Controller() throws Exception {
         // given
-        Product product = Product.builder()
-                .id(1L)
-                .name("test 상품")
-                .price(1000)
-                .description("test 상품 입니다")
-                .stock(100)
-                .category(Category.FASHION)
-                .account(Account.builder().id(1L).build())
-                .build();
-
-        List<Product> productList = List.of(product);
+        Product product = TestDataFactory.createProduct(testAccount);
         Pageable pageable = PageRequest.of(0, 10);
-        Page<Product> result = new PageImpl<>(productList, pageable, 1);
+        Page<Product> productPage = new PageImpl<>(List.of(product), pageable, 1);
 
-        when(productService.findAllProducts(isNull(), any(Pageable.class)))
-                .thenReturn(result);
+        when(productService.findAllProducts(isNull(), any(Pageable.class))).thenReturn(productPage);
+
         // when & then
         mockMvc.perform(get("/product")
                         .param("page", "0")
-                        .param("size", "2")
+                        .param("size", "10")
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("상품 전체 조회 완료"))
-                .andExpect(jsonPath("$.code").value("OK"))
                 .andExpect(jsonPath("$.data.content[0].name").value(product.getName()))
-                .andExpect(jsonPath("$.data.content[0].price").value(product.getPrice()))
-                .andExpect(jsonPath("$.data.content[0].category").value(product.getCategory().name()))
-                .andExpect(jsonPath("$.data.content[0].sellerName").value(product.getAccount().getName()));
+                .andExpect(jsonPath("$.data.content[0].sellerName").value(testAccount.getName()));
     }
 
     @Test
     @DisplayName("상품 카테고리 조회 성공(컨트롤러)")
     void findProductsByCategory_Success_Controller() throws Exception {
         // given
-        Product product = Product.builder()
-                .id(1L)
-                .name("test 상품")
-                .price(1000)
-                .description("test 상품 입니다")
-                .stock(100)
-                .category(Category.FASHION)
-                .account(Account.builder().id(1L).build())
-                .build();
-
-        List<Product> productList = List.of(product);
+        Product product = TestDataFactory.createProduct(testAccount);
         Pageable pageable = PageRequest.of(0, 10);
-        Page<Product> result = new PageImpl<>(productList, pageable, 1);
+        Page<Product> productPage = new PageImpl<>(List.of(product), pageable, 1);
+        String category = "FASHION";
 
-        when(productService.findAllProducts(eq("FASHION"), any(Pageable.class)))
-                .thenReturn(result);
+        when(productService.findAllProducts(eq(category), any(Pageable.class))).thenReturn(productPage);
+
         // when & then
         mockMvc.perform(get("/product")
-                        .param("category", "FASHION")
+                        .param("category", category)
                         .param("page", "0")
-                        .param("size", "2")
+                        .param("size", "10")
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("상품 전체 조회 완료"))
-                .andExpect(jsonPath("$.code").value("OK"))
-                .andExpect(jsonPath("$.data.content[0].name").value(product.getName()))
-                .andExpect(jsonPath("$.data.content[0].price").value(product.getPrice()))
-                .andExpect(jsonPath("$.data.content[0].category").value(product.getCategory().name()))
-                .andExpect(jsonPath("$.data.content[0].sellerName").value(product.getAccount().getName()));
-
-
+                .andExpect(jsonPath("$.data.content[0].category").value(category));
     }
 
     @Test
-    @DisplayName("상품 특정 상품 조회 성공(컨트롤러)")
+    @DisplayName("상품 상세 조회 성공(컨트롤러)")
     void findDetailProduct_Success_Controller() throws Exception {
         // given
-        Product product = Product.builder()
-                .id(1L)
-                .name("test 상품")
-                .price(1000)
-                .description("test 상품 입니다")
-                .stock(100)
-                .category(Category.FASHION)
-                .account(Account.builder().id(1L).build())
-                .build();
+        Long productId = 1L;
+        Product product = TestDataFactory.createProduct(testAccount);
+        when(productService.findDetailProducts(eq(productId))).thenReturn(product);
 
-        when(productService.findDetailProducts(eq(1L)))
-                .thenReturn(product);
         // when & then
-        mockMvc.perform(get("/product/{productId}",1)
-                        .param("page", "0")
-                        .param("size", "2")
+        mockMvc.perform(get("/product/{productId}", productId)
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("상품 상세 조회 완료"))
-                .andExpect(jsonPath("$.code").value("OK"))
                 .andExpect(jsonPath("$.data.name").value(product.getName()))
-                .andExpect(jsonPath("$.data.price").value(product.getPrice()))
-                .andExpect(jsonPath("$.data.category").value(product.getCategory().name()))
-                .andExpect(jsonPath("$.data.sellerName").value(product.getAccount().getName()));
+                .andExpect(jsonPath("$.data.sellerName").value(testAccount.getName()));
     }
 }

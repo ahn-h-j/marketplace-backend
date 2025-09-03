@@ -19,9 +19,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @Tag(name = "Product", description = "상품 관리 API")
 @RequestMapping("/product")
@@ -31,41 +35,6 @@ public interface ProductSwagger {
             summary = "상품 등록",
             description = "새로운 상품을 등록합니다. 판매자 권한이 필요합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @RequestBody(
-            description = "등록할 상품 정보",
-            required = true,
-            content = @Content(
-                    schema = @Schema(implementation = ProductCreateRequestDto.class),
-                    examples = {
-                            @ExampleObject(
-                                    name = "전자기기 상품 등록",
-                                    summary = "스마트폰 등록 예시",
-                                    value = """
-                                    {
-                                        "name": "iPhone 15 Pro",
-                                        "price": 1200000,
-                                        "description": "최신 스마트폰입니다. A17 Pro 칩셋 탑재",
-                                        "stock": 50,
-                                        "category": "ELECTRONICS"
-                                    }
-                                    """
-                            ),
-                            @ExampleObject(
-                                    name = "패션 상품 등록",
-                                    summary = "의류 등록 예시",
-                                    value = """
-                                    {
-                                        "name": "가을 니트 스웨터",
-                                        "price": 89000,
-                                        "description": "부드러운 울 소재의 가을 니트입니다.",
-                                        "stock": 30,
-                                        "category": "FASHION"
-                                    }
-                                    """
-                            )
-                    }
-            )
     )
     @ApiResponses({
             @ApiResponse(
@@ -87,7 +56,8 @@ public interface ProductSwagger {
                                             "description": "최신 스마트폰입니다. A17 Pro 칩셋 탑재",
                                             "stock": 50,
                                             "category": "ELECTRONICS",
-                                            "sellerName": "김판매자"
+                                            "sellerName": "김판매자",
+                                            "imageUrl": "https://example.com/iphone15pro.jpg"
                                         },
                                         "timeStamp": "2025-08-27T12:18:21.5722917"
                                     }
@@ -153,11 +123,13 @@ public interface ProductSwagger {
                     )
             )
     })
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     ResponseEntity<ServiceResult<ProductDetailResponseDto>> createProduct(
-            @Valid @org.springframework.web.bind.annotation.RequestBody ProductCreateRequestDto productCreateRequestDto,
-            @AuthenticationPrincipal PrincipalDetails userDetails
-    );
+            @Valid @RequestPart("requestDto") ProductCreateRequestDto productCreateRequestDto,
+            @AuthenticationPrincipal PrincipalDetails userDetails,
+            @Parameter(description = "상품 이미지 파일", schema = @Schema(type = "string", format = "binary"))
+            @RequestPart("image") MultipartFile image
+    ) throws IOException;
 
     @Operation(
             summary = "상품 수정",
@@ -169,38 +141,6 @@ public interface ProductSwagger {
             description = "수정할 상품의 ID",
             required = true,
             example = "1"
-    )
-    @RequestBody(
-            description = "수정할 상품 정보 (변경하고 싶은 필드만 포함)",
-            required = true,
-            content = @Content(
-                    schema = @Schema(implementation = ProductUpdateRequestDto.class),
-                    examples = {
-                            @ExampleObject(
-                                    name = "가격과 재고 수정",
-                                    summary = "가격과 재고만 변경하는 경우",
-                                    value = """
-                                    {
-                                        "price": 1100000,
-                                        "stock": 45
-                                    }
-                                    """
-                            ),
-                            @ExampleObject(
-                                    name = "전체 정보 수정",
-                                    summary = "모든 필드를 변경하는 경우",
-                                    value = """
-                                    {
-                                        "name": "iPhone 15 Pro Max",
-                                        "price": 1400000,
-                                        "description": "더 큰 화면의 최신 스마트폰입니다.",
-                                        "stock": 35,
-                                        "category": "ELECTRONICS"
-                                    }
-                                    """
-                            )
-                    }
-            )
     )
     @ApiResponses({
             @ApiResponse(
@@ -222,7 +162,8 @@ public interface ProductSwagger {
                                             "description": "더 큰 화면의 최신 스마트폰입니다.",
                                             "stock": 35,
                                             "category": "ELECTRONICS",
-                                            "sellerName": "김판매자"
+                                            "sellerName": "김판매자",
+                                            "imageUrl": "https://example.com/iphone15promax.jpg"
                                         },
                                         "timeStamp": "2025-08-27T12:18:21.5722917"
                                     }
@@ -269,12 +210,13 @@ public interface ProductSwagger {
                     )
             )
     })
-    @PatchMapping("/{productId}")
+    @PatchMapping(value = "/update/{productId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     ResponseEntity<ServiceResult<ProductDetailResponseDto>> updateProduct(
-            @Valid @org.springframework.web.bind.annotation.RequestBody ProductUpdateRequestDto productUpdateRequestDto,
-            @AuthenticationPrincipal PrincipalDetails userDetails,
-            @PathVariable Long productId
-    );
+            @PathVariable Long productId,
+            @RequestPart("requestDto") ProductUpdateRequestDto productUpdateRequestDto,
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            @AuthenticationPrincipal PrincipalDetails userDetails
+    ) throws IOException;
 
     @Operation(
             summary = "상품 삭제",
@@ -371,13 +313,15 @@ public interface ProductSwagger {
                                                     "name": "iPhone 15 Pro",
                                                     "price": 1200000,
                                                     "category": "ELECTRONICS",
-                                                    "sellerName": "김판매자"
+                                                    "sellerName": "김판매자",
+                                                    "imageUrl": "https://example.com/iphone15pro.jpg"
                                                 },
                                                 {
                                                     "name": "가을 니트 스웨터",
                                                     "price": 89000,
                                                     "category": "FASHION",
-                                                    "sellerName": "이판매자"
+                                                    "sellerName": "이판매자",
+                                                    "imageUrl": "https://example.com/sweater.jpg"
                                                 }
                                             ],
                                             "pageable": {
@@ -451,7 +395,8 @@ public interface ProductSwagger {
                                             "description": "최신 스마트폰입니다. A17 Pro 칩셋 탑재",
                                             "stock": 50,
                                             "category": "ELECTRONICS",
-                                            "sellerName": "김판매자"
+                                            "sellerName": "김판매자",
+                                            "imageUrl": "https://example.com/iphone15pro.jpg"
                                         },
                                         "timeStamp": "2025-08-27T12:18:21.5722917"
                                     }

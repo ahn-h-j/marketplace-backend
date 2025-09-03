@@ -19,6 +19,7 @@ public class ProductDetailResponseDto {
     private Integer stock;
     private Category category;
     private String sellerName;
+    private String imageUrl;
 
     public static ProductDetailResponseDto fromEntity(Product product) {
         return ProductDetailResponseDto.builder()
@@ -28,7 +29,8 @@ public class ProductDetailResponseDto {
                 .description(product.getDescription())
                 .stock(product.getStock())
                 .category(product.getCategory())
-                .sellerName(product.getAccount().getName()) // 필요한 정보만 가공
+                .sellerName(product.getAccount().getName())
+                .imageUrl(product.getImageUrl())
                 .build();
     }
 }

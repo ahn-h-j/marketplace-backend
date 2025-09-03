@@ -8,43 +8,43 @@ import com.market.marketplacebackend.cart.domain.CartItem;
 import com.market.marketplacebackend.cart.dto.CartItemAddRequestDto;
 import com.market.marketplacebackend.cart.dto.CartItemUpdateDto;
 import com.market.marketplacebackend.cart.service.CartService;
+import com.market.marketplacebackend.common.enums.AccountRole;
 import com.market.marketplacebackend.common.enums.Category;
+import com.market.marketplacebackend.config.TestConfig;
 import com.market.marketplacebackend.product.domain.Product;
-import org.junit.jupiter.api.BeforeEach;
+import com.market.marketplacebackend.security.domain.PrincipalDetails;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(CartController.class)
+@Import(TestConfig.class)
 public class CartControllerTest {
-    @Mock
+
+    @Autowired
     private CartService cartService;
 
-    @InjectMocks
-    private CartController cartController;
-
+    @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
-    @BeforeEach
-    void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(cartController)
-                .build();
-        objectMapper = new ObjectMapper();
-    }
 
     @Test
     @DisplayName("장바구니 조회 성공 - 컨트롤러")
@@ -56,7 +56,10 @@ public class CartControllerTest {
                 .email("test@example.com")
                 .password("password123")
                 .phoneNumber("010-1234-5678")
+                .accountRole(AccountRole.BUYER)
                 .build();
+        PrincipalDetails customUserDetails = new PrincipalDetails(account);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
 
         Product product = Product.builder()
                 .id(1L)
@@ -72,29 +75,26 @@ public class CartControllerTest {
                 .account(account)
                 .build();
 
-        CartItem cartItem = CartItem.builder()
-                .product(product)
-                .quantity(10)
-                .build();
-
         cart.addProduct(product, 10);
 
         //when
+        // 주입받은 cartService Mock 객체를 사용하여 동작을 정의합니다.
         when(cartService.getCart(eq(1L))).thenReturn(cart);
 
         //then
-        mockMvc.perform(get("/cart/{accountId}", 1)
-                        .contentType(MediaType.APPLICATION_JSON))
-                        .andExpect(status().isOk())
-                        .andExpect(jsonPath("$.success").value(true))
-                        .andExpect(jsonPath("$.message").value("카트 조회 완료"))
-                        .andExpect(jsonPath("$.code").value("OK"))
-                        .andExpect(jsonPath("$.data.items[0].productId").value(product.getId()))
-                        .andExpect(jsonPath("$.data.items[0].productName").value(product.getName()))
-                        .andExpect(jsonPath("$.data.items[0].productPrice").value(product.getPrice()))
-                        .andExpect(jsonPath("$.data.items[0].quantity").value(cartItem.getQuantity()))
-                        .andExpect(jsonPath("$.data.items[0].totalPricePerItem").value(cartItem.getProduct().getPrice() * cartItem.getQuantity()))
-                        .andExpect(jsonPath("$.data.totalPrice").value(cartItem.getProduct().getPrice() * cartItem.getQuantity()));
+        mockMvc.perform(get("/cart")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("카트 조회 완료"))
+                .andExpect(jsonPath("$.code").value("OK"))
+                .andExpect(jsonPath("$.data.items[0].productId").value(product.getId()))
+                .andExpect(jsonPath("$.data.items[0].productName").value(product.getName()))
+                .andExpect(jsonPath("$.data.items[0].productPrice").value(product.getPrice()))
+                .andExpect(jsonPath("$.data.items[0].quantity").value(10))
+                .andExpect(jsonPath("$.data.items[0].totalPricePerItem").value(product.getPrice() * 10))
+                .andExpect(jsonPath("$.data.totalPrice").value(product.getPrice() * 10));
     }
 
     @Test
@@ -107,7 +107,10 @@ public class CartControllerTest {
                 .email("test@example.com")
                 .password("password123")
                 .phoneNumber("010-1234-5678")
+                .accountRole(AccountRole.BUYER)
                 .build();
+        PrincipalDetails customUserDetails = new PrincipalDetails(account);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
 
         Product product = Product.builder()
                 .id(1L)
@@ -138,8 +141,10 @@ public class CartControllerTest {
         when(cartService.addItemToCart(eq(1L), any(CartItemAddRequestDto.class))).thenReturn(cartItem);
 
         // then
-        mockMvc.perform(post("/cart/items/{accountId}", 1)
+        mockMvc.perform(post("/cart/items")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .content(objectMapper.writeValueAsString(cartItemAddRequestDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -156,12 +161,25 @@ public class CartControllerTest {
     @DisplayName("장바구니 상품 추가 실패(상품 없음) - 컨트롤러")
     void addItemToCart_ProductNotFound_Fail_Controller() throws Exception {
         // given
+        Account account = Account.builder()
+                .id(1L)
+                .name("test User")
+                .email("test@example.com")
+                .password("password123")
+                .phoneNumber("010-1234-5678")
+                .accountRole(AccountRole.BUYER)
+                .build();
+        PrincipalDetails customUserDetails = new PrincipalDetails(account);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
+
         CartItemAddRequestDto cartItemAddRequestDto = CartItemAddRequestDto.builder()
                 .quantity(10)
                 .build();
         // when & then
-        mockMvc.perform(post("/cart/items/{accountId}", 1)
+        mockMvc.perform(post("/cart/items")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .content(objectMapper.writeValueAsString(cartItemAddRequestDto)))
                 .andExpect(status().isBadRequest());
     }
@@ -170,13 +188,25 @@ public class CartControllerTest {
     @DisplayName("장바구니 상품 추가 실패(수량 0) - 컨트롤러")
     void addItemToCart_ZeroQuantity_Fail_Controller() throws Exception {
         // given
+        Account account = Account.builder()
+                .id(1L)
+                .name("test User")
+                .email("test@example.com")
+                .password("password123")
+                .phoneNumber("010-1234-5678")
+                .accountRole(AccountRole.BUYER)
+                .build();
+        PrincipalDetails customUserDetails = new PrincipalDetails(account);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         CartItemAddRequestDto cartItemAddRequestDto = CartItemAddRequestDto.builder()
                 .productId(1L)
                 .quantity(0)
                 .build();
         // when & then
-        mockMvc.perform(post("/cart/items/{accountId}", 1)
+        mockMvc.perform(post("/cart/items")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .content(objectMapper.writeValueAsString(cartItemAddRequestDto)))
                 .andExpect(status().isBadRequest());
     }
@@ -191,7 +221,10 @@ public class CartControllerTest {
                 .email("test@example.com")
                 .password("password123")
                 .phoneNumber("010-1234-5678")
+                .accountRole(AccountRole.BUYER)
                 .build();
+        PrincipalDetails customUserDetails = new PrincipalDetails(account);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
 
         Product product = Product.builder()
                 .id(1L)
@@ -225,8 +258,10 @@ public class CartControllerTest {
         when(cartService.updateItem(eq(1L), any(CartItemUpdateDto.class))).thenReturn(cartItem);
 
         // then
-        mockMvc.perform(patch("/cart/items/{accountId}", 1)
+        mockMvc.perform(patch("/cart/items")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .content(objectMapper.writeValueAsString(cartItemUpdateDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -243,12 +278,24 @@ public class CartControllerTest {
     @DisplayName("장바구니 상품 수정 실패(상품 없음) - 컨트롤러")
     void updateItem_ProductNotFound_Fail_Controller() throws Exception {
         // given
+        Account account = Account.builder()
+                .id(1L)
+                .name("test User")
+                .email("test@example.com")
+                .password("password123")
+                .phoneNumber("010-1234-5678")
+                .accountRole(AccountRole.BUYER)
+                .build();
+        PrincipalDetails customUserDetails = new PrincipalDetails(account);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         CartItemUpdateDto cartItemUpdateDto = CartItemUpdateDto.builder()
                 .quantity(5)
                 .build();
         // when & then
-        mockMvc.perform(patch("/cart/items/{accountId}", 1)
+        mockMvc.perform(patch("/cart/items")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .content(objectMapper.writeValueAsString(cartItemUpdateDto)))
                 .andExpect(status().isBadRequest());
     }
@@ -257,9 +304,20 @@ public class CartControllerTest {
     @DisplayName("장바구니 상품 삭제 성공 - 컨트롤러")
     void deleteItem_Success_Controller() throws Exception {
         // given
-
+        Account account = Account.builder()
+                .id(1L)
+                .name("test User")
+                .email("test@example.com")
+                .password("password123")
+                .phoneNumber("010-1234-5678")
+                .accountRole(AccountRole.BUYER)
+                .build();
+        PrincipalDetails customUserDetails = new PrincipalDetails(account);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         // then
-        mockMvc.perform(delete("/cart/items/{accountId}/{cartItemId}", 1,1)
+        mockMvc.perform(delete("/cart/items/{cartItemId}",1)
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
         verify(cartService, times(1)).deleteItem(eq(1L), eq(1L));
@@ -269,9 +327,20 @@ public class CartControllerTest {
     @DisplayName("장바구니 상품 전체 삭제 성공 - 컨트롤러")
     void deleteAllCartItems_Success_Controller() throws Exception {
         // given
-
+        Account account = Account.builder()
+                .id(1L)
+                .name("test User")
+                .email("test@example.com")
+                .password("password123")
+                .phoneNumber("010-1234-5678")
+                .accountRole(AccountRole.BUYER)
+                .build();
+        PrincipalDetails customUserDetails = new PrincipalDetails(account);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         // then
-        mockMvc.perform(delete("/cart/items/{accountId}", 1)
+        mockMvc.perform(delete("/cart/items")
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
         verify(cartService, times(1)).deleteAllCartItems(eq(1L));

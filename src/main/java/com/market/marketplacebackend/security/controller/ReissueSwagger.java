@@ -23,17 +23,6 @@ public interface ReissueSwagger {
             description = "리프레시 토큰을 사용하여 새로운 액세스 토큰과 리프레시 토큰을 발급받습니다. " +
                          "리프레시 토큰은 쿠키로 전달되어야 하며, 새로운 토큰들은 응답 헤더와 쿠키로 반환됩니다."
     )
-    @RequestBody(
-            description = "리프레시 토큰은 쿠키를 통해 자동으로 전달됩니다.",
-            required = false,
-            content = @Content(
-                    examples = @ExampleObject(
-                            name = "쿠키 예시",
-                            summary = "브라우저에서 자동으로 전달되는 쿠키",
-                            description = "Cookie: refresh=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    )
-            )
-    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",

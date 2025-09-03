@@ -25,8 +25,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -45,7 +44,6 @@ public class UserIntegrationTest {
     private AccountRepository accountRepository;
     @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
-
     @Test
     @DisplayName("회원가입 통합 성공 테스트")
     void signUp_Integration_Success() throws Exception{
@@ -115,12 +113,10 @@ public class UserIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginDto)))
                 .andExpect(status().isOk())
+                .andExpect(cookie().exists("ACCESS"))
+                // 'REFRESH' 라는 이름의 쿠키가 존재하는지 검증합니다.
+                .andExpect(cookie().exists("REFRESH"))
                 .andReturn();
-
-        // JWT 토큰 검증
-        String authorizationHeader = result.getResponse().getHeader("Authorization");
-        assertThat(authorizationHeader).isNotNull();
-        assertThat(authorizationHeader).startsWith("Bearer ");
 
         // 쿠키 검증
         Cookie[] cookies = result.getResponse().getCookies();

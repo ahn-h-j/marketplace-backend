@@ -29,8 +29,9 @@ public class Product {
     @ManyToOne
     @JoinColumn(name = "account_id")
     private Account account;
+    private String imageUrl;
 
-    public void updateIfChanged(ProductUpdateRequestDto dto) {
+    public void updateIfChanged(ProductUpdateRequestDto dto, String imageUrl) {
         if (dto.getName() != null && !this.name.equals(dto.getName())) {
             this.name = dto.getName();
         }
@@ -45,6 +46,9 @@ public class Product {
         }
         if (dto.getCategory() != null && !this.category.equals(dto.getCategory())) {
             this.category = dto.getCategory();
+        }
+        if(imageUrl != null){
+            this.imageUrl = imageUrl;
         }
     }
 

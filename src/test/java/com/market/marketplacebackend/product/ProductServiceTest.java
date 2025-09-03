@@ -6,6 +6,7 @@ import com.market.marketplacebackend.common.enums.AccountRole;
 import com.market.marketplacebackend.common.enums.Category;
 import com.market.marketplacebackend.common.exception.BusinessException;
 import com.market.marketplacebackend.common.exception.ErrorCode;
+import com.market.marketplacebackend.common.service.ImageService;
 import com.market.marketplacebackend.product.domain.Product;
 import com.market.marketplacebackend.product.dto.ProductCreateRequestDto;
 import com.market.marketplacebackend.product.dto.ProductUpdateRequestDto;
@@ -21,7 +22,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,9 +46,12 @@ class ProductServiceTest {
     @InjectMocks
     private ProductService productService;
 
+    @Mock
+    private ImageService imageService;
+
     @Test
     @DisplayName("상품 등록 성공(서비스)")
-    void createProduct_Success_Service() {
+    void createProduct_Success_Service() throws IOException {
         // given
         Account account = Account.builder()
                 .id(1L)
@@ -61,13 +68,21 @@ class ProductServiceTest {
                 .stock(50)
                 .category(Category.FOOD)
                 .build();
-        Product product = productCreateRequestDto.toEntity(account);
+        MultipartFile file = new MockMultipartFile(
+                "file",
+                "test.jpg",
+                "image/jpeg",
+                "test image content".getBytes()
+        );
+        String imageURL = imageService.uploadImage(file);
+
+        Product product = productCreateRequestDto.toEntity(account, imageURL);
 
         when(accountRepository.findById(eq(1L))).thenReturn(Optional.of(account));
         when(productRepository.save(any(Product.class))).thenReturn(product);
 
         // when
-        Product result = productService.createProduct(account.getId(), productCreateRequestDto);
+        Product result = productService.createProduct(account.getId(), productCreateRequestDto, file);
 
         // then
         verify(accountRepository).findById(1L);
@@ -82,21 +97,27 @@ class ProductServiceTest {
     @Test
     @DisplayName("상품 등록 실패(서비스) - ACCOUNT_NOT_FOUND")
     void createProduct_AccountNotFound_Fail() {
-            // given
-            ProductCreateRequestDto productCreateRequestDto = ProductCreateRequestDto.builder()
-                    .name("test Product")
-                    .price(10000)
-                    .description("맛있는 사과입니다")
-                    .stock(50)
-                    .category(Category.FOOD)
-                    .build();
-            when(accountRepository.findById(eq(1L))).thenReturn(Optional.empty());
-            // when
-            BusinessException exception = assertThrows(BusinessException.class, () -> productService.createProduct(1L, productCreateRequestDto));
+        // given
+        ProductCreateRequestDto productCreateRequestDto = ProductCreateRequestDto.builder()
+                .name("test Product")
+                .price(10000)
+                .description("맛있는 사과입니다")
+                .stock(50)
+                .category(Category.FOOD)
+                .build();
+        when(accountRepository.findById(eq(1L))).thenReturn(Optional.empty());
+        MultipartFile file = new MockMultipartFile(
+                "file",
+                "test.jpg",
+                "image/jpeg",
+                "test image content".getBytes()
+        );
+        // when
+        BusinessException exception = assertThrows(BusinessException.class, () -> productService.createProduct(1L, productCreateRequestDto, file));
 
-            // then
-            verify(accountRepository).findById(1L);
-            assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_NOT_FOUND);
+        // then
+        verify(accountRepository).findById(1L);
+        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_NOT_FOUND);
     }
 
     @Test
@@ -119,8 +140,14 @@ class ProductServiceTest {
                 .category(Category.FOOD)
                 .build();
         when(accountRepository.findById(eq(1L))).thenReturn(Optional.of(account));
+        MultipartFile file = new MockMultipartFile(
+                "file",
+                "test.jpg",
+                "image/jpeg",
+                "test image content".getBytes()
+        );
         // when
-        BusinessException exception = assertThrows(BusinessException.class, () -> productService.createProduct(1L, productCreateRequestDto));
+        BusinessException exception = assertThrows(BusinessException.class, () -> productService.createProduct(1L, productCreateRequestDto,file));
 
         // then
         verify(accountRepository).findById(1L);
@@ -129,7 +156,7 @@ class ProductServiceTest {
 
     @Test
     @DisplayName("상품 수정 성공(서비스)")
-    void updateProduct_Success_Service() {
+    void updateProduct_Success_Service() throws IOException {
         // given
         Account account = Account.builder()
                 .id(1L)
@@ -157,10 +184,17 @@ class ProductServiceTest {
                 .account(account)
                 .build();
 
+        MultipartFile file = new MockMultipartFile(
+                "file",
+                "test.jpg",
+                "image/jpeg",
+                "test image content".getBytes()
+        );
+
         when(productRepository.findById(eq(1L))).thenReturn(Optional.of(originalProduct));
 
         // when
-        Product result = productService.updateProduct(account.getId(), originalProduct.getId(), productUpdateRequestDto);
+        Product result = productService.updateProduct(account.getId(), originalProduct.getId(), productUpdateRequestDto, file);
 
         // then
         verify(productRepository).findById(1L);
@@ -183,9 +217,14 @@ class ProductServiceTest {
                 .category(Category.FASHION)
                 .build();
         when(productRepository.findById(eq(1L))).thenReturn(Optional.empty());
-
+        MultipartFile file = new MockMultipartFile(
+                "file",
+                "test.jpg",
+                "image/jpeg",
+                "test image content".getBytes()
+        );
         // when
-        BusinessException exception = assertThrows(BusinessException.class, () -> productService.updateProduct(1L, 1L, productUpdateRequestDto));
+        BusinessException exception = assertThrows(BusinessException.class, () -> productService.updateProduct(1L, 1L, productUpdateRequestDto, file));
 
         // then
         verify(productRepository).findById(1L);
@@ -200,10 +239,15 @@ class ProductServiceTest {
         Product otherOwnersProduct = Product.builder().id(1L).account(ownerAccount).build();
 
         when(productRepository.findById(eq(1L))).thenReturn(Optional.of(otherOwnersProduct));
-
+        MultipartFile file = new MockMultipartFile(
+                "file",
+                "test.jpg",
+                "image/jpeg",
+                "test image content".getBytes()
+        );
         // when
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> productService.updateProduct(1L, 1L, new ProductUpdateRequestDto()));
+                () -> productService.updateProduct(1L, 1L, new ProductUpdateRequestDto(), file));
 
         // then
         verify(productRepository).findById(1L);
@@ -212,7 +256,7 @@ class ProductServiceTest {
 
     @Test
     @DisplayName("상품 삭제 성공(서비스)")
-    void deleteProduct_Success_Service() {
+    void deleteProduct_Success_Service() throws IOException {
         // given
         Product product = Product.builder()
                 .id(1L)
@@ -224,6 +268,7 @@ class ProductServiceTest {
                 .account(Account.builder().id(1L).build())
                 .build();
         when(productRepository.findById(eq(1L))).thenReturn(Optional.of(product));
+
         // when
         productService.deleteProduct(1L, 1L);
         // then

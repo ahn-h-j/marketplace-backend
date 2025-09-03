@@ -11,6 +11,7 @@ import com.market.marketplacebackend.cart.repository.CartItemRepository;
 import com.market.marketplacebackend.cart.repository.CartRepository;
 import com.market.marketplacebackend.product.domain.Product;
 import com.market.marketplacebackend.product.repository.ProductRepository;
+import com.market.marketplacebackend.security.domain.PrincipalDetails;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
@@ -28,6 +31,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static com.market.marketplacebackend.TestDataFactory.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -69,6 +74,8 @@ class CartIntegrationTest {
         // given
         Account account = createAccount();
         accountRepository.save(account);
+        PrincipalDetails customUserDetails = new PrincipalDetails(account);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         Product product = createProduct( account);
         productRepository.save(product);
         Cart cart = createCart(account);
@@ -76,8 +83,9 @@ class CartIntegrationTest {
         cart.addProduct(product, 10);
         cartRepository.save(cart);
         //then
-        mockMvc.perform(get("/cart/{accountId}", account.getId())
-                        .contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/cart")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("카트 조회 완료"))
@@ -96,14 +104,18 @@ class CartIntegrationTest {
         // given
         Account account = createAccount();
         accountRepository.save(account);
+        PrincipalDetails customUserDetails = new PrincipalDetails(account);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         Product product = createProduct( account);
         productRepository.save(product);
         Cart cart = createCart(account);
         cartRepository.save(cart);
         CartItemAddRequestDto cartItemAddRequestDto = createCartItemAddRequestDto(product.getId(), 5);
         // then
-        mockMvc.perform(post("/cart/items/{accountId}", account.getId())
+        mockMvc.perform(post("/cart/items")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .content(objectMapper.writeValueAsString(cartItemAddRequestDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -122,14 +134,18 @@ class CartIntegrationTest {
         // given
         Account account = createAccount();
         accountRepository.save(account);
+        PrincipalDetails customUserDetails = new PrincipalDetails(account);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         cartRepository.save(createCart(account));
 
         CartItemAddRequestDto cartItemAddRequestDto = CartItemAddRequestDto.builder()
                 .quantity(10)
                 .build();
         // when & then
-        mockMvc.perform(post("/cart/items/{accountId}", account.getId())
+        mockMvc.perform(post("/cart/items")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .content(objectMapper.writeValueAsString(cartItemAddRequestDto)))
                 .andExpect(status().isBadRequest());
     }
@@ -140,13 +156,17 @@ class CartIntegrationTest {
         // given
         Account account = createAccount();
         accountRepository.save(account);
+        PrincipalDetails customUserDetails = new PrincipalDetails(account);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         Product product = createProduct( account);
         productRepository.save(product);
         CartItemAddRequestDto cartItemAddRequestDto = createCartItemAddRequestDto(product.getId(), 0);
 
         // when & then
-        mockMvc.perform(post("/cart/items/{accountId}", account.getId())
+        mockMvc.perform(post("/cart/items")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .content(objectMapper.writeValueAsString(cartItemAddRequestDto)))
                 .andExpect(status().isBadRequest());
     }
@@ -157,6 +177,8 @@ class CartIntegrationTest {
         // given
         Account account = createAccount();
         accountRepository.save(account);
+        PrincipalDetails customUserDetails = new PrincipalDetails(account);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         Product product = createProduct( account);
         productRepository.save(product);
         Cart cart = createCart(account);
@@ -165,8 +187,10 @@ class CartIntegrationTest {
         CartItemUpdateDto cartItemUpdateDto = createCartItemUpdateDto(cartItem.getId(), 5);
 
         // then
-        mockMvc.perform(patch("/cart/items/{accountId}", account.getId())
+        mockMvc.perform(patch("/cart/items")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .content(objectMapper.writeValueAsString(cartItemUpdateDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -186,12 +210,16 @@ class CartIntegrationTest {
         // given
         Account account = createAccount();
         accountRepository.save(account);
+        PrincipalDetails customUserDetails = new PrincipalDetails(account);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         CartItemUpdateDto cartItemUpdateDto = CartItemUpdateDto.builder()
                 .quantity(5)
                 .build();
         // when & then
-        mockMvc.perform(patch("/cart/items/{accountId}", account.getId())
+        mockMvc.perform(patch("/cart/items")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken))
+                        .with(csrf())
                         .content(objectMapper.writeValueAsString(cartItemUpdateDto)))
                 .andExpect(status().isBadRequest());
     }
@@ -202,14 +230,18 @@ class CartIntegrationTest {
         // given
         Account account = createAccount();
         accountRepository.save(account);
+        PrincipalDetails customUserDetails = new PrincipalDetails(account);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         Product product = createProduct( account);
         productRepository.save(product);
         Cart cart = createCart(account);
         CartItem cartItem = cart.addProduct(product,10);
         cartRepository.save(cart);
         // then
-        mockMvc.perform(delete("/cart/items/{accountId}/{cartItemId}", account.getId(),cartItem.getId())
-                        .contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(delete("/cart/items/{cartItemId}", cartItem.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken))
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
 
         entityManager.flush();
@@ -224,14 +256,18 @@ class CartIntegrationTest {
         // given
         Account account = createAccount();
         accountRepository.save(account);
+        PrincipalDetails customUserDetails = new PrincipalDetails(account);
+        Authentication authToken = new UsernamePasswordAuthenticationToken(customUserDetails, null, customUserDetails.getAuthorities());
         Product product = createProduct( account);
         productRepository.save(product);
         Cart cart = createCart(account);
         CartItem cartItem = cart.addProduct(product,10);
         cartRepository.save(cart);
         // then
-        mockMvc.perform(delete("/cart/items/{accountId}", account.getId())
-                        .contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(delete("/cart/items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(authentication(authToken))
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
 
         entityManager.flush();
