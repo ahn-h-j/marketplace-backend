@@ -63,7 +63,7 @@ public class ProductController implements ProductSwagger {
     }
 
     @DeleteMapping("/{productId}")
-    public ResponseEntity<?> deleteProduct(@AuthenticationPrincipal PrincipalDetails userDetails, @PathVariable Long productId) throws IOException {
+    public ResponseEntity<?> deleteProduct(@AuthenticationPrincipal PrincipalDetails userDetails, @PathVariable Long productId){
         productService.deleteProduct(userDetails.getAccount().getId(), productId);
 
         return ResponseEntity.noContent().build();
